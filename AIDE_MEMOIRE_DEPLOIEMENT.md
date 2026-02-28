@@ -79,3 +79,21 @@ Le code est public, mais le serveur Web n'est pas encore allumé.
 
 🎉 **C'est gagné !** 
 Vous pouvez partager cette belle adresse URL à n'importe qui, lier cette adresse de base dans la console Google Cloud (Origine JS Autorisée), et l'application fonctionnera depuis n'importe quel point du globe.
+
+---
+
+## 🛡️ 4. Sécurité de la Clé API (Vital !)
+
+Puisque le code d'une application web (HTML/JS) est téléchargé et exécuté sur l'ordinateur de l'utilisateur, **vos clés API sont publiques et visibles** par n'importe qui sachant lire le code source (`F12`). C'est normal.
+Cependant, pour éviter qu'un pirate ne copie votre "API Key" et l'utilise gratuitement sur son propre site, vous **devez absolument** la restreindre.
+
+**Procédure (Dans Google Cloud Console) :**
+1.  Aller dans `API et services` > `Identifiants`.
+2.  Cliquer sur le nom de votre **Clé API**.
+3.  Dans la section *Restrictions relatives aux applications*, choisir **Sites Web** (Référents HTTP).
+4.  Ajouter les URL exactes de vos sites autorisés en y ajoutant impérativement un astérisque `/*` à la fin (pour autoriser toutes les pages du site).
+    *   Exemple local : `http://localhost/*`
+    *   Exemple public : `https://tresorier21000.github.io/*`
+5.  Cliquer sur **Enregistrer**.
+
+Dès lors, seule votre application officielle (hébergée sur GitHub) pourra interroger les serveurs de Google avec cette clé. Si un pirate tente de l'utiliser ailleurs, Google bloquera immédiatement la requête en voyant qu'elle ne provient pas de `github.io`.
