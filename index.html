@@ -19,9 +19,13 @@
     <div class="app-container">
         <!-- Barre latérale -->
         <aside class="sidebar">
-            <header class="sidebar-header" style="display: flex; align-items: center; gap: 0.75rem;">
-                <img src="favicon.png" alt="GPX Logo" style="width: 32px; height: 32px; border-radius: 8px;">
-                <h1 style="margin: 0;">GPX Viewer</h1>
+            <header class="sidebar-header"
+                style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="favicon.png" alt="GPX Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+                    <h1 style="margin: 0;">GPX Viewer</h1>
+                </div>
+                <button id="btn-help" class="btn-help" title="Comment utiliser l'application ?">?</button>
             </header>
 
             <section class="actions-section">
@@ -113,6 +117,33 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Modale d'aide (Cachée par défaut) - DÉPLACÉE ICI POUR CORRIGER LE Z-INDEX -->
+    <div id="help-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Comment utiliser GPX Viewer</h2>
+                <button id="btn-close-help" class="btn-close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul>
+                    <li><strong>Ajouter des traces :</strong> Utilisez le bouton "Google Drive" (si vous avez l'accès)
+                        ou "Fichier local" pour charger un ou plusieurs fichiers <code>.gpx</code> simultanément.</li>
+                    <li><strong>Interagir :</strong> Cliquez sur une ligne tracée sur la carte pour faire apparaître son
+                        <strong>profil altimétrique</strong> complet en bas de l'écran.</li>
+                    <li><strong>Couches de carte :</strong> En haut à droite de la carte, survolez l'icône des calques
+                        pour passer en vue Satellite ou Carte Randonnée (Topo).</li>
+                    <li><strong>Statistiques :</strong> Le panneau de gauche additionne automatiquement la distance et
+                        le dénivelé positif de toutes les traces affichées.</li>
+                    <li><strong>Nettoyer :</strong> Supprimez une trace précise en cliquant sur la petite corbeille
+                        rouge à côté de son nom, ou utilisez "Tout effacer" pour repartir à zéro.</li>
+                </ul>
+                <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);"><em>Astuce : Ne chargez
+                        pas plus de 10 traces simultanément pour garder une bonne lisibilité des couleurs et des
+                        graphiques.</em></p>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->

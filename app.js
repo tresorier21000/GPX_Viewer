@@ -71,10 +71,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let colorIndex = 0;
 
     // Éléments du DOM
-    const trackCountEl = document.getElementById('track-count');
-    const trackListEl = document.getElementById('track-list');
-    const statTotalDistanceEl = document.getElementById('stat-total-distance');
-    const statTotalElevationGainEl = document.getElementById('stat-total-elevation-gain');
+    const trackList = document.getElementById('track-list');
+    const trackCountSpan = document.getElementById('track-count');
+    const statTotalDistance = document.getElementById('stat-total-distance');
+    const statTotalElevationGain = document.getElementById('stat-total-elevation-gain');
+    const btnClearAll = document.getElementById('btn-clear-all');
+
+    // Éléments du Profil Altimétrique
+    const elevationProfileContainer = document.getElementById('elevation-profile-container');
+    const btnCloseProfile = document.getElementById('btn-close-profile');
+
+    // Éléments de la Modale d'Aide
+    const btnHelp = document.getElementById('btn-help');
+    const btnCloseHelp = document.getElementById('btn-close-help');
+    const helpModal = document.getElementById('help-modal');
+
+    // --- Logique Modale d'Aide ---
+    btnHelp.addEventListener('click', () => {
+        helpModal.style.display = 'flex';
+    });
+
+    btnCloseHelp.addEventListener('click', () => {
+        helpModal.style.display = 'none';
+    });
+
+    // Fermer la modale en cliquant à l'extérieur (sur le fond gris)
+    helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) {
+            helpModal.style.display = 'none';
+        }
+    });
+
+    // --- Fermeture du profil altimétrique ---
+    if (btnCloseProfile) {
+        btnCloseProfile.addEventListener('click', () => {
+            elevationProfileContainer.style.display = 'none';
+        });
+    };
 
     fileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
