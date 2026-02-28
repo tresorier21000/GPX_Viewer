@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualiseur & Comparateur de Traces GPX</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Barre latérale -->
+        <aside class="sidebar">
+            <header class="sidebar-header" style="display: flex; align-items: center; gap: 0.75rem;">
+                <img src="favicon.png" alt="GPX Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+                <h1 style="margin: 0;">GPX Viewer</h1>
+            </header>
+
+            <section class="actions-section">
+                <!-- Fallback local -->
+                <div class="file-input-wrapper">
+                    <button class="btn btn-primary" id="btn-local-file">
+                        Ouvrir fichier local
+                    </button>
+                    <input type="file" id="gpx-file-input" accept=".gpx" multiple style="display: none;">
+                </div>
+
+                <!-- Google Drive Integration (Placeholder pour GSI) -->
+                <button class="btn btn-google" id="btn-google-drive">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg"
+                        alt="Google Drive" class="icon">
+                    Ouvrir depuis Google Drive
+                </button>
+            </section>
+
+            <section class="tracks-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin-bottom: 0;">Traces (<span id="track-count">0</span>)</h2>
+                    <button class="btn-delete" id="btn-clear-all" title="Tout effacer"
+                        style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                        Tout Effacer
+                    </button>
+                </div>
+                <ul id="track-list" class="track-list">
+                    <!-- Les traces seront injectées ici -->
+                </ul>
+            </section>
+
+            <section class="stats-section">
+                <h2>Statistiques Globales</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Distance Totale</span>
+                        <span class="stat-value" id="stat-total-distance">0.00 km</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Dénivelé +</span>
+                        <span class="stat-value" id="stat-total-elevation-gain">0 m</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Container de la carte -->
+        <main class="map-container">
+            <div id="map"></div>
+
+            <!-- Profil Altimétrique (Caché par défaut) -->
+            <div id="elevation-profile-container" class="elevation-profile-container" style="display: none;">
+                <div class="profile-header">
+                    <h3 id="profile-title">Profil altimétrique</h3>
+                    <button id="btn-close-profile" class="btn-delete" title="Fermer le profil">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="elevation-chart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Leaflet-GPX Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+    <!-- Chart.js pour le profil altimétrique -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google API pour Drive -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    <!-- Custom App Script -->
+    <script src="app.js"></script>
+</body>
+
+</html>

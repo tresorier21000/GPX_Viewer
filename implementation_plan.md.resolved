@@ -1,0 +1,45 @@
+# Visualiseur et Comparateur de Traces GPX
+
+Projet pour visualiser, comparer des traces GPX issues de Google Drive, avec calcul de statistiques (dénivelé, distance) et fonds de carte multiples.
+
+## Architecture & Choix Techniques
+
+**Intégration Google Drive confirmée :**
+Puisque l'application sera diffusée (sur GitHub et pour les adhérents d'un club), l'API Google Drive officielle (Google Picker API) est le meilleur choix.
+*   **Contrainte pour le développeur (vous) :** Il faudra créer un projet sur Google Cloud Console pour générer un `CLIENT_ID` et une `API_KEY`.
+*   **Bénéfice pour l'utilisateur final :** N'importe quel adhérent pourra se connecter à son propre compte Google et parcourir son Drive en un clic, directement depuis l'application.
+*   **Fallback inclus :** L'application inclura également un bouton "Ouvrir fichier local" pour ceux qui n’utilisent pas Google Drive ou pour tester rapidement avec des fichiers sur l'ordinateur.
+
+## Proposed Changes
+
+### Configuration du projet web (D:\Yves\Telechargements\2026\Antigravity\GPX_Viewer)
+
+#### [NEW] index.html
+Fichier principal contenant la structure de l'interface :
+- Inclusion des scripts Google API (`api.js`, `gsi/client`).
+- Barre latérale avec boutons "Se connecter à Google", "Ouvrir depuis Drive" et "Fichier local".
+- Liste des traces.
+- Carte Leaflet.
+- Tableau de statistiques.
+
+#### [NEW] style.css
+Design moderne en **Dark Mode**, avec effet "Glassmorphism" subtil pour une esthétique premium et technique (adaptée à un profil sportif/randonnée).
+
+#### [NEW] app.js
+- **Initialisation Leaflet** : Couches OSM classique, Satellite (Esri), et OpenTopoMap (idéal rando).
+- **Google Picker API** : Logique d'authentification OAuth 2.0 et affichage du sélecteur de fichiers de Google.
+- **Leaflet-GPX** : Chargement, parcours, extraction des données (distance, dénivelé + / -).
+- **Gestion des traces** : Ajout avec couleur aléatoire distincte, suppression propre de la carte et du tableau de bord.
+
+#### [NEW] README.md
+Instructions détaillées pour configurer le projet Google Cloud et publier sur GitHub Pages.
+
+## Verification Plan
+
+### Manual Verification
+1. Lancer l'application web.
+2. Vérifier l'affichage de la carte et le changement de fonds (Topo, OSM, Satellite).
+3. Tester le drag & drop ou l'ouverture locale (Fallback).
+4. Configurer la clé d'API et tester le flux d'authentification complète avec Google Drive.
+5. Charger deux traces GPX superposées, vérifier leurs données dans le tableau.
+6. Supprimer la première trace via l'interface, vérifier qu'elle disparaît bien de la carte et du tableau.
