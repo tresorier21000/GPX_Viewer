@@ -12,7 +12,12 @@ Application web permettant d'afficher et de comparer des traces GPX sur une cart
 
 *   Fonds de carte multiples : TopoRando (défaut), OpenStreetMap, World Imagery (Satellite).
 *   Structure prête pour lire les fichiers locaux `.gpx` simultanément.
-*   Panneau récapitulatif avec compteur, et espaces pour distance et dénivelé total.
+*   Panneau récapitulatif avec compteur, et cumuls globaux pour la distance et le dénivelé positif.
+*   **Profil altimétrique interactif** : Cliquez sur une trace pour afficher son graphique d'élévation précis.
+*   **Centrage automatique** : La carte recalibre automatiquement son zoom pour englober toutes vos traces actives de manière fluide (anti-rebond).
+*   **Nettoyage rapide** : Un bouton "Tout effacer" permet de vider le tableau et la carte en un clic.
+
+> 💡 **Conseil d'utilisation :** Il n'y a pas de limite technique bloquante, mais pour garder une lecture de carte optimale et s'assurer que les couleurs des traces restent bien distinctes (10 couleurs différentes générées), il est recommandé de comparer un **maximum de 10 traces simultanément**.
 
 ## Configuration Google Drive API (Prévisionnel)
 
