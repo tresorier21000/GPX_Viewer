@@ -194,12 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.totalDistance = appState.tracks.reduce((sum, track) => sum + track.distance, 0);
         appState.totalElevationGain = appState.tracks.reduce((sum, track) => sum + track.elevationGain, 0);
 
-        trackCountEl.textContent = appState.tracks.length;
-        statTotalDistanceEl.textContent = appState.totalDistance.toFixed(2) + ' km';
-        statTotalElevationGainEl.textContent = Math.round(appState.totalElevationGain) + ' m';
+        trackCountSpan.textContent = appState.tracks.length;
+        statTotalDistance.textContent = appState.totalDistance.toFixed(2) + ' km';
+        statTotalElevationGain.textContent = Math.round(appState.totalElevationGain) + ' m';
 
         // Mettre à jour la liste
-        trackListEl.innerHTML = '';
+        trackList.innerHTML = '';
         appState.tracks.forEach(track => {
             const li = document.createElement('li');
             li.className = 'track-item';
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             li.appendChild(headerDiv);
             li.appendChild(statsDiv);
-            trackListEl.appendChild(li);
+            trackList.appendChild(li);
         });
     }
 
