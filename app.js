@@ -412,12 +412,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createPicker() {
         const view = new google.picker.DocsView(google.picker.ViewId.DOCS);
+        view.setIncludeFolders(true); // Permet de voir et naviguer dans les dossiers
         // On ne filtre idéalement que les fichiers .gpx, mimeType 'application/gpx+xml'
         // Mais par sécurité, on peut laisser un peu plus large ou chercher les fichiers finissant par .gpx
         view.setMimeTypes('application/octet-stream,application/gpx+xml,text/xml');
 
         const picker = new google.picker.PickerBuilder()
-            .enableFeature(google.picker.Feature.NAV_HIDDEN)
+            // On retire NAV_HIDDEN pour afficher le panneau latéral
             .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
             .setDeveloperKey(API_KEY)
             .setAppId(APP_ID)
