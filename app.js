@@ -409,8 +409,8 @@ function setupDriveButton() {
             // Demander le token si on ne l'a pas
             window.tokenClient.requestAccessToken({ prompt: 'consent' });
         } else {
-            // On a déjà le token, on crée le picker
-            window.tokenClient.requestAccessToken({ prompt: '' });
+            // On a déjà le token, on crée le picker directement sans rien redemander
+            createPicker();
         }
     });
 }
