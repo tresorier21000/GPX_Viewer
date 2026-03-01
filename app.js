@@ -55,21 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
         totalElevationGain: 0
     };
 
-    // Couleurs très contrastées (Rouge, Bleu vif, Vert sapin, Orange, Violet, Bleu clair) pour mieux se distinguer
-    const trackColors = [
-        '#FF0000', // Rouge pur
-        '#0033FF', // Bleu vif
-        '#009900', // Vert sombre
-        '#FF9900', // Orange
-        '#9900CC', // Violet
-        '#00CCFF', // Cyan
-        '#FF0099', // Rose fuchsia
-        '#999900', // Jaune moutarde
-        '#660000', // Bordeaux
-        '#000066', // Bleu marine
-    ];
-    let colorIndex = 0;
-
     // Éléments du DOM
     const trackList = document.getElementById('track-list');
     const trackCountSpan = document.getElementById('track-count');
@@ -130,8 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * Charge une trace GPX sur la carte et met à jour l'état
      */
     function loadGpxTrack(gpxContent, fileName) {
-        const trackColor = trackColors[colorIndex % trackColors.length];
-        colorIndex++;
+        const trackColor = window.trackColors[window.colorIndex % window.trackColors.length];
+        window.colorIndex++;
         const trackId = 'track-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
         const gpxLayer = new L.GPX(gpxContent, {
@@ -185,6 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }).addTo(map);
     }
+
+    // Rendre la fonction accessible globalement pour le Picker Google Drive
+    window.loadGpxTrackGlobal = loadGpxTrack;
 
     /**
      * Met à jour le tableau de bord (Liste + Stats)
@@ -273,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Vider l'état
         appState.tracks = [];
-        colorIndex = 0; // Réinitialiser le compteur de couleur
+        window.colorIndex = 0; // Réinitialiser le compteur de couleur
 
         // Mettre à jour l'UI
         updateDashboard();
@@ -367,122 +355,146 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. Intégration Google Drive (Google Identity Services & Picker API)
-    // IMPORTANT: Remplacez ces valeurs par celles de votre projet Google Cloud !
-    const CLIENT_ID = '129413603825-hhavjkceh88vfou7q3okoffhn460u0id.apps.googleusercontent.com';
-    const API_KEY = 'AIzaSyCSzh2bC6BleQeaWcqFbJQtBqyzi8H3YKE';
-    const APP_ID = '129413603825';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+    // Le bouton Google Drive est géré à l'extérieur pour éviter les problèmes de chronologie de chargement
+}); // Fin du DOMContentLoaded principal
 
-    // Bouton de déclenchement
+// --- Configuration de l'API Google ---
+// Ces constantes doivent être accessibles globalement pour les scripts GSI et GAPI
+const CLIENT_ID = '129413603825-hhavjkceh88vfou7q3okoffhn460u0id.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyCSzh2bC6BleQeaWcqFbJQtBqyzi8H3YKE';
+const APP_ID = '129413603825';
+const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+// Variables globales pour l'API Google hors de l'écouteur DOMContentLoaded
+window.tokenClient = null;
+window.accessToken = null;
+window.pickerInited = false;
+window.gisInited = false;
+
+// Couleurs globales pour être accessibles de partout
+window.trackColors = [
+    '#FF0000', '#0033FF', '#009900', '#FF9900', '#9900CC',
+    '#00CCFF', '#FF0099', '#999900', '#660000', '#000066',
+];
+window.colorIndex = 0;
+
+// Logique du bouton Drive (Attachée quand le DOM est prêt ET les API sont prêtes)
+function setupDriveButton() {
     const driveBtn = document.getElementById('btn-google-drive');
+    if (!driveBtn) return;
 
-    function maybeEnableButtons() {
-        if (pickerInited && gisInited) {
-            // Activer le bouton si ce n'est pas déjà fait
-            driveBtn.disabled = false;
-            if (CLIENT_ID === 'VOTRE_CLIENT_ID_ICI') {
-                console.warn("N'oubliez pas de configurer CLIENT_ID et API_KEY dans app.js");
-            }
-        }
+    if (window.pickerInited && window.gisInited) {
+        driveBtn.disabled = false;
     }
 
+    // On s'assure de ne pas attacher l'événement plusieurs fois
+    if (driveBtn.dataset.listenerAttached === 'true') return;
+    driveBtn.dataset.listenerAttached = 'true';
+
     driveBtn.addEventListener('click', () => {
-        if (!pickerInited || !gisInited) {
+        if (!window.pickerInited || !window.gisInited) {
             alert('L\'API Google est en cours de chargement. Veuillez patienter.');
             return;
         }
 
-        tokenClient.callback = async (resp) => {
+        window.tokenClient.callback = async (resp) => {
             if (resp.error !== undefined) {
                 throw (resp);
             }
-            accessToken = resp.access_token;
+            window.accessToken = resp.access_token;
             createPicker();
         };
 
-        if (accessToken === null) {
+        if (window.accessToken === null) {
             // Demander le token si on ne l'a pas
-            tokenClient.requestAccessToken({ prompt: 'consent' });
+            window.tokenClient.requestAccessToken({ prompt: 'consent' });
         } else {
             // On a déjà le token, on crée le picker
-            tokenClient.requestAccessToken({ prompt: '' });
+            window.tokenClient.requestAccessToken({ prompt: '' });
         }
     });
+}
 
-    function createPicker() {
-        const view = new google.picker.DocsView(google.picker.ViewId.DOCS);
-        view.setIncludeFolders(true); // Permet de voir et naviguer dans les dossiers
-        // On ne filtre idéalement que les fichiers .gpx, mimeType 'application/gpx+xml'
-        // Mais par sécurité, on peut laisser un peu plus large ou chercher les fichiers finissant par .gpx
-        view.setMimeTypes('application/octet-stream,application/gpx+xml,text/xml');
+// On l'appelle aussi au cas où le DOMContentLoaded se déclenche APRES gapi
+document.addEventListener('DOMContentLoaded', setupDriveButton);
 
-        const picker = new google.picker.PickerBuilder()
-            // On retire NAV_HIDDEN pour afficher le panneau latéral
-            .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
-            .setDeveloperKey(API_KEY)
-            .setAppId(APP_ID)
-            .setOAuthToken(accessToken)
-            .addView(view)
-            .addView(new google.picker.DocsUploadView())
-            .setCallback(pickerCallback)
-            .build();
-        picker.setVisible(true);
-    }
+function createPicker() {
+    const view = new google.picker.DocsView(google.picker.ViewId.DOCS);
+    view.setIncludeFolders(true); // Permet de voir et naviguer dans les dossiers
+    // On autorise les fichiers GPX/XML et aussi le type de dossier Google Drive pour pouvoir naviguer
+    view.setMimeTypes('application/octet-stream,application/gpx+xml,text/xml,application/vnd.google-apps.folder');
 
-    async function pickerCallback(data) {
-        if (data.action === google.picker.Action.PICKED) {
-            console.log("Fichiers Drive sélectionnés :", data.docs);
-            const documents = data.docs;
+    const picker = new google.picker.PickerBuilder()
+        // On retire NAV_HIDDEN pour afficher le panneau latéral
+        .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+        .setDeveloperKey(API_KEY)
+        .setAppId(APP_ID)
+        .setOAuthToken(window.accessToken)
+        .addView(view)
+        .addView(new google.picker.DocsUploadView())
+        .setCallback(pickerCallback)
+        .setSize(850, 600)
+        .build();
+    picker.setVisible(true);
+}
 
-            for (const doc of documents) {
-                const fileId = doc.id;
-                const fileName = doc.name;
+async function pickerCallback(data) {
+    if (data.action === google.picker.Action.PICKED) {
+        console.log("Fichiers Drive sélectionnés :", data.docs);
+        const documents = data.docs;
 
-                try {
-                    // Télécharger le contenu du fichier via un Fetch HTTP avec le token OAuth
-                    const fileUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-                    const response = await fetch(fileUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`
-                        }
-                    });
+        for (const doc of documents) {
+            const fileId = doc.id;
+            const fileName = doc.name;
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+            try {
+                // Télécharger le contenu du fichier via un Fetch HTTP avec le token OAuth
+                const fileUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+                const response = await fetch(fileUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${window.accessToken}`
                     }
+                });
 
-                    const gpxContent = await response.text();
-                    loadGpxTrack(gpxContent, fileName);
-
-                } catch (error) {
-                    console.error('Erreur lors du téléchargement depuis Drive:', error);
-                    alert(`Impossible de charger le fichier ${fileName} depuis Drive.`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const gpxContent = await response.text();
+                // On utilise window pour appeler loadGpxTrack qui était coincé dans DOMContentLoaded
+                // Ah, loadGpxTrack est dans DOMContentLoaded. Rendons-la globale !
+                if (typeof window.loadGpxTrackGlobal === 'function') {
+                    window.loadGpxTrackGlobal(gpxContent, fileName);
+                } else {
+                    console.error("loadGpxTrackGlobal n'est pas défini");
+                }
+
+            } catch (error) {
+                console.error('Erreur lors du téléchargement depuis Drive:', error);
+                alert(`Impossible de charger le fichier ${fileName} depuis Drive.`);
             }
         }
     }
-
-});
-
+}
 // Variables globales pour l'API Google hors de l'écouteur DOMContentLoaded
-let tokenClient;
-let accessToken = null;
-let pickerInited = false;
-let gisInited = false;
+window.tokenClient = null;
+window.accessToken = null;
+window.pickerInited = false;
+window.gisInited = false;
 
 // Initialisation GSI (Appelé par accounts.google.com/gsi/client)
 window.gisLoaded = function () {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: '129413603825-hhavjkceh88vfou7q3okoffhn460u0id.apps.googleusercontent.com',
-        scope: 'https://www.googleapis.com/auth/drive.readonly',
+    console.log("Google Identity Services (GSI) chargé");
+    window.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID, // Utilise la constante globale qu'on a défini plus haut
+        scope: SCOPES, // Pareil
         callback: '', // défini lors du clic
     });
-    gisInited = true;
+    window.gisInited = true;
 
     // Si la page est déjà chargée, on vérifie si le bouton est prêt
     const driveBtn = document.getElementById('btn-google-drive');
-    if (driveBtn && pickerInited) driveBtn.disabled = false;
+    if (driveBtn && window.pickerInited) driveBtn.disabled = false;
 };
 
 // Initialisation gapi (Appelé par apis.google.com/js/api.js)
@@ -491,12 +503,13 @@ window.gapiLoaded = function () {
 };
 
 async function initializeGapiClient() {
+    console.log("GAPI Client chargé");
     await gapi.client.init({
-        apiKey: 'AIzaSyCSzh2bC6BleQeaWcqFbJQtBqyzi8H3YKE',
+        apiKey: API_KEY, // Utilise la constante globale au lieu de la chaîne en dur
         discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
     });
-    pickerInited = true;
+    window.pickerInited = true;
 
     const driveBtn = document.getElementById('btn-google-drive');
-    if (driveBtn && gisInited) driveBtn.disabled = false;
+    if (driveBtn && window.gisInited) driveBtn.disabled = false;
 }
