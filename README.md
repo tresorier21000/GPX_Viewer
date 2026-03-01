@@ -13,7 +13,7 @@ Application web permettant d'afficher et de comparer des traces GPX sur une cart
 *   Fonds de carte multiples : TopoRando (défaut), OpenStreetMap, World Imagery (Satellite).
 *   Structure prête pour lire les fichiers locaux `.gpx` simultanément.
 *   Panneau récapitulatif avec compteur, et cumuls globaux pour la distance et le dénivelé positif.
-*   **Profil altimétrique interactif** : Cliquez sur une trace pour afficher son graphique d'élévation précis.
+*   **Profil altimétrique interactif** : Cliquez sur une trace pour afficher son graphique d'élévation précis. Au survol de la courbe avec la souris, un curseur mobile s'affiche simultanément sur la carte pour vous situer géographiquement.
 *   **Centrage automatique** : La carte recalibre automatiquement son zoom pour englober toutes vos traces actives de manière fluide (anti-rebond).
 *   **Nettoyage rapide** : Un bouton "Tout effacer" permet de vider le tableau et la carte en un clic.
 
