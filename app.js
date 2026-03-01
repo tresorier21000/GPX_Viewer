@@ -138,10 +138,52 @@ document.addEventListener('DOMContentLoaded', () => {
             const elevationGain = e.target.get_elevation_gain(); // en m
             const elevationData = e.target.get_elevation_data(); // Récupère le tableau [distance, elevation, desc]
 
+            // --- Données GPS pour le graphique interactif ---
+            // Certains GPX encapsulent la trace dans de multiples FeatureGroups (parfois imbriqués)
+            // On utilise une recherche récursive pour trouver la première vraie Polyline
+            let polyline = null;
+            function findPolyline(layerGroup) {
+                const layers = layerGroup.getLayers ? layerGroup.getLayers() : [];
+                for (const layer of layers) {
+                    if (typeof layer.getLatLngs === 'function') {
+                        return layer;
+                    }
+                    if (layer.getLayers) {
+                        const found = findPolyline(layer);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            polyline = findPolyline(e.target);
+
+            if (!polyline) {
+                console.error("Impossible de trouver la trace polyline dans le GPX.");
+                return;
+            }
+
+            const latlngs = polyline.getLatLngs();
+
+            // Sécurisation de l'aplatissement selon le format retourné (single line vs multi-line GPX)
+            let flatLatLngs = [];
+            if (Array.isArray(latlngs) && latlngs.length > 0) {
+                if (Array.isArray(latlngs[0])) {
+                    // C'est un MultiPolyline : On l'aplatit en s'assurant de gérer la profondeur
+                    flatLatLngs = latlngs.flat(Infinity);
+                } else {
+                    // C'est un simple tableau de coordonnées
+                    flatLatLngs = latlngs;
+                }
+            }
+
             // Ajouter l'évènement de clic sur la trace pour afficher son profil
-            e.target.getLayers()[0].on('click', () => {
-                showElevationProfile(elevationData, fileName.replace('.gpx', ''), trackColor);
+            polyline.on('click', () => {
+                showElevationProfile(elevationData, flatLatLngs, fileName.replace('.gpx', ''), trackColor);
             });
+
+            // --- Flèches Directionnelles ---
+            // (Désactivées car incompatibles avec les objets multi-lignes issus de certains GPX, provoquant un crash JS)
 
             // Centrer la carte sur la trace courante (en attendant les éventuelles autres)
             map.fitBounds(e.target.getBounds());
@@ -278,15 +320,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     closeProfileBtn.addEventListener('click', () => {
         profileContainer.style.display = 'none';
+        if (window.graphHoverMarker && map.hasLayer(window.graphHoverMarker)) {
+            map.removeLayer(window.graphHoverMarker);
+        }
+    });
+
+    // Écouteur pour cacher le marqueur quand la souris quitte la zone du graphique
+    document.getElementById('elevation-chart').addEventListener('mouseleave', () => {
+        if (window.graphHoverMarker && map.hasLayer(window.graphHoverMarker)) {
+            map.removeLayer(window.graphHoverMarker);
+        }
     });
 
     /**
      * Affiche le profil altimétrique de la trace donnée en utilisant Chart.js
      * @param {Array} elevationData - Tableau de points [distance, elevation, tooltip_desc]
+     * @param {Array} flatLatLngs - Tableau des coordonnées géographiques associées (pour le pointeur)
      * @param {String} trackName - Nom de la trace
      * @param {String} color - Couleur de la trace pour le style
      */
-    function showElevationProfile(elevationData, trackName, color) {
+    function showElevationProfile(elevationData, flatLatLngs, trackName, color) {
         // Préparer les données pour Chart.js
         // elevationData format classique Leaflet-gpx: [[distance_en_m, elevation, label], ...]
         // Attention: Leaflet-gpx renvoie parfois la distance en km directement selon sa version/config, on vérifie
@@ -324,6 +377,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 interaction: {
                     mode: 'index',
                     intersect: false,
+                },
+                onHover: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const dataIndex = activeElements[0].index;
+
+                        // Si le point géographique correspondant existe
+                        if (flatLatLngs && flatLatLngs[dataIndex]) {
+                            const latlng = flatLatLngs[dataIndex];
+
+                            // Création du marqueur miroir s'il n'existe pas encore
+                            if (!window.graphHoverMarker) {
+                                window.graphHoverMarker = L.circleMarker(latlng, {
+                                    radius: 6,
+                                    color: '#ffffff', // Bordure blanche pour contraster
+                                    weight: 2,
+                                    fillColor: color,
+                                    fillOpacity: 1
+                                }).addTo(map);
+                            } else {
+                                // Mise à jour de la position et de la couleur du marqueur
+                                window.graphHoverMarker.setLatLng(latlng);
+                                window.graphHoverMarker.setStyle({ fillColor: color });
+                                if (!map.hasLayer(window.graphHoverMarker)) {
+                                    window.graphHoverMarker.addTo(map);
+                                }
+                            }
+                        }
+                    }
                 },
                 plugins: {
                     legend: { display: false }, // Cacher la légende pour gagner de la place
