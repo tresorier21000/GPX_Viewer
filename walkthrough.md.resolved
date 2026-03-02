@@ -1,0 +1,25 @@
+# GPX Viewer - Mise à jour du Profil Interactif
+
+## Réalisations
+
+1. **Curseur Cartographique Interactif**
+   * Mise en place d'un lien bidirectionnel entre le graphique d'élévation (Chart.js) et la carte (Leaflet).
+   * Le survol d'un point kilométrique/altimétrique spécifique sur le graphique affiche désormais instantanément un marqueur circulaire (cerclé de blanc) synchronisé sur le tracé de la carte géographique.
+   * Offre un rendu professionnel (style Strava) pour suivre géographiquement sa position par rapport au dénivelé de la courbe.
+   * Suppression de l'ancienne info-bulle flottante (instable) au profit de cette nouvelle interface dédiée et synchronisée au profil altimétrique.
+
+2. **Lecture Robuste des Fichiers GPX**
+   * Identification et correction d'un plantage JavaScript fatal (`polyline.getLatLngs is not a function`).
+   * Ce problème survenait lorsque le module `leaflet-gpx` chargeait des tracés contenant des "Points d'intérêt" (Waypoints) ou de multiples segments (au lieu d'un seul trait continu), les rendant prioritaires par erreur sur la géométrie de la ligne principale.
+   * Création d'un algorithme récursif [findPolyline()](file:///d:/Yves/Telechargements/2026/Antigravity/GPX_Viewer/app.js#145-158) permettant d'inspecter en profondeur les dossiers de calques Leaflet (`FeatureGroups`) pour garantir l'extraction de la suite de coordonnées GPS exactes (`LatLngs`), quelle que soit la méthode complexe avec laquelle le fichier GPX a été structuré ou exporté.
+   * Sécurisation de "l'aplatissement" (flatten) des tableaux de coordonnées pour s'assurer qu'elles correspondent parfaitement de bout en bout aux index lus par le graphique Chart.js.
+
+3. **Mise à Jour de la Documentation**
+   * Ajout de l'explication de la fonction "Curseur Interactif" directement dans le fichier [README.md](file:///d:/Yves/Telechargements/2026/Antigravity/GPX_Viewer/README.md).
+   * Même ajout de l'astuce de maniement dans la fenêtre d'aide (bouton "?") affichée à l'intérieur de l'application (le code HTML en direct).
+
+## Tests Validés
+
+* Testé avec succès sur des fichiers `.gpx` standards composées d'un seul trait ininterrompu.
+* Testé et validé sur des traces multi-segments avec métadonnées et points d'intérêts pour s'assurer que l'analyse profonde des calques parvienne bien à isoler la piste sur la carte sans jamais déclencher de plantage applicatif.
+* Vérification que le "Zoom de rattrapage sur la taille de l'écran" (`fitBounds()`), l'addition des totaux (km/dénivelé), ainsi que les fonctions de mise à la corbeille restent 100% opérationnelles, peu importe le type de GPX chargé, suite à la mise en place du curseur temporaire.
