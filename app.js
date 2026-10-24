@@ -449,8 +449,20 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 // Variables globales pour l'API Google hors de l'écouteur DOMContentLoaded
 window.tokenClient = null;
 window.accessToken = null;
+window.tokenExpiry = 0; // Horodatage (ms) d'expiration du jeton d'accès
 window.pickerInited = false;
 window.gisInited = false;
+
+// Le jeton est-il encore utilisable ? (marge de sécurité de 60 s)
+function isTokenValid() {
+    return window.accessToken !== null && Date.now() < window.tokenExpiry;
+}
+
+// Oublie le jeton courant (expiré ou refusé par Google)
+function resetToken() {
+    window.accessToken = null;
+    window.tokenExpiry = 0;
+}
 
 // Couleurs globales pour être accessibles de partout
 window.trackColors = [
@@ -480,18 +492,33 @@ function setupDriveButton() {
 
         window.tokenClient.callback = async (resp) => {
             if (resp.error !== undefined) {
-                throw (resp);
+                console.error('Erreur d\'autorisation Google :', resp);
+                resetToken();
+                if (resp.error === 'access_denied') {
+                    alert('Accès à Google Drive refusé.\n\nSi vous n\'avez pas cliqué sur "Annuler", votre adresse Gmail n\'est peut-être pas encore autorisée : demandez l\'accès au développeur.');
+                } else {
+                    alert(`Erreur lors de la connexion à Google : ${resp.error}${resp.error_description ? '\n' + resp.error_description : ''}`);
+                }
+                return;
             }
             window.accessToken = resp.access_token;
+            window.hasConsented = true; // L'accord est donné : les renouvellements seront silencieux
+            // Le jeton expire (≈ 1 h) : on mémorise l'échéance avec 60 s de marge
+            const expiresIn = Number(resp.expires_in) || 3600;
+            window.tokenExpiry = Date.now() + (expiresIn - 60) * 1000;
             createPicker();
         };
 
-        if (window.accessToken === null) {
-            // Demander le token si on ne l'a pas
+        if (isTokenValid()) {
+            // Jeton encore valide : on ouvre le picker directement
+            createPicker();
+        } else if (!window.hasConsented) {
+            // Première demande dans cette session : écran de consentement complet
             window.tokenClient.requestAccessToken({ prompt: 'consent' });
         } else {
-            // On a déjà le token, on crée le picker directement sans rien redemander
-            createPicker();
+            // Jeton expiré : on en redemande un (silencieux si l'accord est déjà donné)
+            window.accessToken = null;
+            window.tokenClient.requestAccessToken({ prompt: '' });
         }
     });
 }
@@ -537,6 +564,13 @@ async function pickerCallback(data) {
                     }
                 });
 
+                if (response.status === 401) {
+                    // Jeton expiré ou révoqué : on l'oublie pour en redemander un au prochain clic
+                    window.accessToken = null;
+                    window.tokenExpiry = 0;
+                    alert('Votre session Google a expiré.\nCliquez à nouveau sur "Ouvrir depuis Google Drive" pour vous reconnecter.');
+                    return;
+                }
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -552,7 +586,7 @@ async function pickerCallback(data) {
 
             } catch (error) {
                 console.error('Erreur lors du téléchargement depuis Drive:', error);
-                alert(`Impossible de charger le fichier ${fileName} depuis Drive.`);
+                alert(`Impossible de charger le fichier ${fileName} depuis Drive.\n(${error.message})`);
             }
         }
     }
@@ -570,6 +604,17 @@ window.gisLoaded = function () {
         client_id: CLIENT_ID, // Utilise la constante globale qu'on a défini plus haut
         scope: SCOPES, // Pareil
         callback: '', // défini lors du clic
+        // Erreurs liées à la fenêtre de connexion (bloquée ou fermée)
+        error_callback: (err) => {
+            console.warn('Fenêtre de connexion Google :', err);
+            if (err && err.type === 'popup_failed_to_open') {
+                alert('La fenêtre de connexion Google a été bloquée par le navigateur.\nAutorisez les fenêtres pop-up pour ce site puis réessayez.');
+            } else if (err && err.type === 'popup_closed') {
+                // L'utilisateur a fermé la fenêtre : rien de grave, pas d'alerte
+            } else {
+                alert('Erreur lors de l\'ouverture de la connexion Google : ' + (err && err.type ? err.type : 'inconnue'));
+            }
+        },
     });
     window.gisInited = true;
 
