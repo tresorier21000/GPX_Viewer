@@ -1,5 +1,7 @@
 # GPX Viewer
 
+**Version actuelle : 1.1.0** (octobre 2026) – voir l'[historique des versions](#historique-des-versions).
+
 Application web permettant d'afficher et de comparer des traces GPX sur une carte Leaflet, avec prise en charge d'un chargement de fichiers multiples.
 
 ## Installation
@@ -39,3 +41,33 @@ Si vous souhaitez héberger cette application et activer le bouton **Google Driv
 > **Pour un usage personnel ou en petit club :**
 > Laissez toujours le statut de publication sur **"Testing"** (En cours de test) depuis ce menu. 
 > Assurez-vous simplement que les emails Google des utilisateurs autorisés de votre club sont bien ajoutés dans la liste des **Test users** au même endroit. Vos utilisateurs auront un écran d'avertissement ("Google n'a pas validé cette application"), qu'ils devront contourner via *Paramètres avancés > Continuer*. Cela ne leur sera demandé qu'une seule fois.
+
+## Connexion Google Drive : gestion du jeton d'accès
+
+Le bouton **Google Drive** utilise un **jeton d'accès** fourni par Google (Google Identity Services). Ce jeton n'est valable qu'**environ 1 heure**.
+
+*   **Expiration gérée automatiquement** (depuis la **v1.1.0**, octobre 2026) : l'application mémorise l'heure d'expiration du jeton (avec 60 s de marge). Au clic suivant sur le bouton, un jeton expiré est redemandé automatiquement, sans recharger la page.
+*   **Premier clic** : écran de consentement complet (`prompt: 'consent'`). **Renouvellements** : demande rapide (`prompt: ''`), une fenêtre Google peut s'ouvrir brièvement.
+*   **Erreur 401 au téléchargement d'un fichier** : le jeton est oublié et l'utilisateur est invité à recliquer pour se reconnecter.
+*   **Messages d'erreur explicites** au lieu d'un clic sans effet :
+    *   accès refusé (`access_denied`) : bouton « Annuler » ou adresse Gmail absente des *Test users* ;
+    *   fenêtre de connexion bloquée par le navigateur (`popup_failed_to_open`) : autoriser les pop-ups pour le site ;
+    *   fenêtre fermée par l'utilisateur (`popup_closed`) : aucune alerte.
+
+> 💡 Avant cette correction, une page restée ouverte plus d'une heure réutilisait un jeton expiré : le bouton Drive semblait ne plus fonctionner jusqu'au rechargement de la page (F5).
+
+## Documentation
+
+*   [Guides/Guide_Adherent_GPX_Viewer.docx](Guides/Guide_Adherent_GPX_Viewer.docx) : guide pour les adhérents (accès, connexion, utilisation, problèmes fréquents).
+*   [Guides/Guide_Developpeur_GPX_Viewer.docx](Guides/Guide_Developpeur_GPX_Viewer.docx) : installation, configuration Google Cloud, publication et dépannage.
+*   [AIDE_MEMOIRE_DEPLOIEMENT.md](AIDE_MEMOIRE_DEPLOIEMENT.md) : pièges et astuces de déploiement.
+
+## Historique des versions
+
+| Version | Date | Changements |
+|---|---|---|
+| **1.1.0** | Octobre 2026 | Gestion de l'expiration du jeton Google (≈ 1 h) avec renouvellement automatique ; messages d'erreur clairs (accès refusé, pop-up bloquée, session expirée) ; restauration du logo `favicon.png` ; guides adhérent et développeur. |
+| 1.0.0 | Février 2026 | Première version : traces GPX multiples (local et Google Drive), statistiques, profil altimétrique, fonds de carte. |
+
+> Lors d'une nouvelle version, mettre à jour : le numéro affiché en bas de `index.html`, le paramètre `?v=` de `app.js` / `style.css` dans `index.html` (si ces fichiers ont changé), ce README et les guides.
+

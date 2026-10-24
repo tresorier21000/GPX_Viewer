@@ -97,3 +97,28 @@ Cependant, pour éviter qu'un pirate ne copie votre "API Key" et l'utilise gratu
 5.  Cliquer sur **Enregistrer**.
 
 Dès lors, seule votre application officielle (hébergée sur GitHub) pourra interroger les serveurs de Google avec cette clé. Si un pirate tente de l'utiliser ailleurs, Google bloquera immédiatement la requête en voyant qu'elle ne provient pas de `github.io`.
+
+---
+
+## ⏱️ 5. Le jeton d'accès Google expire au bout d'1 heure
+
+**Le problème :**
+Avec Google Identity Services (`google.accounts.oauth2.initTokenClient`), l'utilisateur obtient un **jeton d'accès** (*access token*) valable **environ 1 heure** seulement (champ `expires_in` = 3599 secondes). Si le code garde ce jeton en mémoire sans surveiller sa date d'expiration, une page restée ouverte longtemps continue d'utiliser un jeton périmé : le Picker ou le téléchargement échoue (erreur **401**) et l'application **semble « cassée »**… jusqu'à ce qu'on recharge la page (F5). On croit alors à tort à un problème d'API Google obsolète.
+
+**La solution appliquée dans GPX Viewer (version 1.1.0, octobre 2026) :**
+*   À la réception du jeton, mémoriser l'échéance : `Date.now() + (expires_in - 60) * 1000` (60 s de marge).
+*   À chaque clic, vérifier la validité du jeton ; s'il a expiré, en redemander un automatiquement (`requestAccessToken({ prompt: '' })`, rapide car l'accord a déjà été donné).
+*   Si une requête Drive renvoie **401**, oublier le jeton et inviter l'utilisateur à recliquer.
+*   Ne jamais faire `throw` dans le callback du jeton (l'erreur est invisible pour l'utilisateur) : afficher un message clair à la place, et utiliser `error_callback` pour détecter une fenêtre pop-up bloquée (`popup_failed_to_open`) ou fermée (`popup_closed`).
+
+> **Réflexe de diagnostic :** si « ça ne marche plus » puis « ça remarche » après un rechargement de page, pensez d'abord à l'expiration du jeton avant de soupçonner l'API Google.
+
+---
+
+## 🔄 6. Publier une modification sans mauvaise surprise
+
+*   **Cache du navigateur :** après une modification de `app.js` ou `style.css`, augmentez le numéro de version dans `index.html` (ex. `app.js?v=10` → `app.js?v=11`), sinon les visiteurs peuvent garder l'ancienne version.
+*   **Numéro de version visible :** ce paramètre `?v=` est purement technique et invisible. Pensez aussi à changer le numéro affiché en bas de la page (`GPX Viewer v1.1.0` dans `index.html`), l'historique des versions du `README.md` et les guides.
+*   **Push ou Pull ?** Dans GitHub Desktop, **Push origin** envoie vos modifications vers GitHub ; **Pull origin** récupère celles qui sont sur GitHub mais pas sur votre ordinateur. Si GitHub Desktop propose *Pull origin*, faites d'abord le Pull, puis le Push.
+*   **Ne modifiez pas les fichiers directement sur github.com :** en avril 2026, `favicon.png` a été supprimé par erreur depuis l'interface web ; la suppression a ensuite été rapatriée sur l'ordinateur lors d'un Pull. Un fichier supprimé reste récupérable dans l'historique Git (onglet *History* de GitHub Desktop).
+
