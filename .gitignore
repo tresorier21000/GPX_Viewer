@@ -1,0 +1,6 @@
+# Fichiers exécutables d'installation
+*.exe
+
+# Fichiers temporaires système
+Thumbs.db
+Desktop.ini

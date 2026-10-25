@@ -1,6 +1,6 @@
 # GPX Viewer
 
-**Version actuelle : 1.1.0** (octobre 2026) – voir l'[historique des versions](#historique-des-versions).
+**Version actuelle : 1.2.0** (octobre 2026) – voir l'[historique des versions](#historique-des-versions).
 
 Application web permettant d'afficher et de comparer des traces GPX sur une carte Leaflet, avec prise en charge d'un chargement de fichiers multiples.
 
@@ -66,6 +66,7 @@ Le bouton **Google Drive** utilise un **jeton d'accès** fourni par Google (Goog
 
 | Version | Date | Changements |
 |---|---|---|
+| **1.2.0** | Octobre 2026 | Fermeture et nettoyage automatique du profil altimétrique lors de la suppression d'une trace ou lors du clic sur « Tout effacer » ; ajout du script Inno Setup (`setup.iss`) et génération de l'installateur Windows `Setup_GPX_Viewer_v1.2.0.exe` ; sécurisation de la clé API Google (référents HTTP et restrictions d'API). |
 | **1.1.0** | Octobre 2026 | Gestion de l'expiration du jeton Google (≈ 1 h) avec renouvellement automatique ; messages d'erreur clairs (accès refusé, pop-up bloquée, session expirée) ; restauration du logo `favicon.png` ; guides adhérent et développeur. |
 | 1.0.0 | Février 2026 | Première version : traces GPX multiples (local et Google Drive), statistiques, profil altimétrique, fonds de carte. |
 

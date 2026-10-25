@@ -52,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const appState = {
         tracks: [], // { id, name, gpxLayer, distance, elevationGain, color }
         totalDistance: 0,
-        totalElevationGain: 0
+        totalElevationGain: 0,
+        currentProfileTrackId: null // Id de la trace dont le profil est actuellement affiché
     };
 
     // Éléments du DOM
@@ -90,9 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Fermeture du profil altimétrique ---
     if (btnCloseProfile) {
         btnCloseProfile.addEventListener('click', () => {
-            elevationProfileContainer.style.display = 'none';
+            if (typeof closeElevationProfile === 'function') {
+                closeElevationProfile();
+            } else {
+                elevationProfileContainer.style.display = 'none';
+            }
         });
-    };
+    }
 
     fileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
@@ -179,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Ajouter l'évènement de clic sur la trace pour afficher son profil
             polyline.on('click', () => {
-                showElevationProfile(elevationData, flatLatLngs, fileName.replace('.gpx', ''), trackColor);
+                showElevationProfile(elevationData, flatLatLngs, fileName.replace('.gpx', ''), trackColor, trackId);
             });
 
             // --- Flèches Directionnelles ---
@@ -269,12 +274,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Ferme le profil altimétrique et nettoie les ressources associées (graphique et curseur sur la carte)
+     */
+    function closeElevationProfile() {
+        if (profileContainer) {
+            profileContainer.style.display = 'none';
+        }
+        if (elevationChart) {
+            elevationChart.destroy();
+            elevationChart = null;
+        }
+        appState.currentProfileTrackId = null;
+        if (window.graphHoverMarker && map.hasLayer(window.graphHoverMarker)) {
+            map.removeLayer(window.graphHoverMarker);
+        }
+    }
+
+    /**
      * Supprime une trace de la carte et de l'état
      */
     function removeTrack(trackId) {
         const trackIndex = appState.tracks.findIndex(t => t.id === trackId);
         if (trackIndex !== -1) {
             const track = appState.tracks[trackIndex];
+
+            // Si le profil altimétrique actuellement affiché est celui de cette trace, on le ferme
+            if (appState.currentProfileTrackId === trackId) {
+                closeElevationProfile();
+            }
+
             // Retirer de la carte
             map.removeLayer(track.gpxLayer);
             // Retirer du tableau d'état
@@ -286,6 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appState.tracks.length > 0) {
                 const group = new L.featureGroup(appState.tracks.map(t => t.gpxLayer));
                 map.fitBounds(group.getBounds());
+            } else {
+                // S'il n'y a plus aucune trace, s'assurer que le profil est bien fermé
+                closeElevationProfile();
             }
         }
     }
@@ -295,6 +326,9 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function clearAllTracks() {
         if (appState.tracks.length === 0) return;
+
+        // Fermer le profil altimétrique
+        closeElevationProfile();
 
         // Retirer toutes les couches de la carte
         appState.tracks.forEach(track => {
@@ -318,12 +352,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileTitle = document.getElementById('profile-title');
     const closeProfileBtn = document.getElementById('btn-close-profile');
 
-    closeProfileBtn.addEventListener('click', () => {
-        profileContainer.style.display = 'none';
-        if (window.graphHoverMarker && map.hasLayer(window.graphHoverMarker)) {
-            map.removeLayer(window.graphHoverMarker);
-        }
-    });
+    if (closeProfileBtn) {
+        closeProfileBtn.addEventListener('click', closeElevationProfile);
+    }
 
     // Écouteur pour cacher le marqueur quand la souris quitte la zone du graphique
     document.getElementById('elevation-chart').addEventListener('mouseleave', () => {
@@ -338,8 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {Array} flatLatLngs - Tableau des coordonnées géographiques associées (pour le pointeur)
      * @param {String} trackName - Nom de la trace
      * @param {String} color - Couleur de la trace pour le style
+     * @param {String} trackId - Identifiant unique de la trace
      */
-    function showElevationProfile(elevationData, flatLatLngs, trackName, color) {
+    function showElevationProfile(elevationData, flatLatLngs, trackName, color, trackId) {
+        // Mémoriser quelle trace a son profil affiché
+        appState.currentProfileTrackId = trackId || null;
+
         // Préparer les données pour Chart.js
         // elevationData format classique Leaflet-gpx: [[distance_en_m, elevation, label], ...]
         // Attention: Leaflet-gpx renvoie parfois la distance en km directement selon sa version/config, on vérifie
