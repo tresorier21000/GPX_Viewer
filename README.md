@@ -59,7 +59,6 @@ Le bouton **Google Drive** utilise un **jeton d'accès** fourni par Google (Goog
 ## Documentation
 
 *   [Guides/Guide_Adherent_GPX_Viewer.docx](Guides/Guide_Adherent_GPX_Viewer.docx) : guide pour les adhérents (accès, connexion, utilisation, problèmes fréquents).
-*   [Guides/Guide_Developpeur_GPX_Viewer.docx](Guides/Guide_Developpeur_GPX_Viewer.docx) : installation, configuration Google Cloud, publication et dépannage.
 *   [AIDE_MEMOIRE_DEPLOIEMENT.md](AIDE_MEMOIRE_DEPLOIEMENT.md) : pièges et astuces de déploiement.
 
 ## Historique des versions
