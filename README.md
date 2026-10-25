@@ -2,64 +2,56 @@
 
 **Version actuelle : 1.2.0** (octobre 2026) – voir l'[historique des versions](#historique-des-versions).
 
-Application web permettant d'afficher et de comparer des traces GPX sur une carte Leaflet, avec prise en charge d'un chargement de fichiers multiples.
+Application web permettant d'afficher et de comparer des traces GPX sur une carte interactive, avec prise en charge d'un chargement de fichiers multiples.
 
-## Installation
+👉 **Accès en ligne direct : [https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**  
+*(Rien à installer : fonctionne directement dans n'importe quel navigateur web moderne sur ordinateur, tablette ou smartphone).*
 
-1. Ouvrez une invite de commande ou le terminal.
-2. Démarrez un serveur web local depuis le dossier `GPX_Viewer`. Par exemple : `python -m http.server 8000` (si Python est installé) ou `npx serve` ou l'extension Live Server sous VSCode.
-3. Renseignez l'URL locale dans votre navigateur : `http://localhost:8000`.
+---
 
-## Fonctionnalités
+## Fonctionnalités principales
 
-*   Fonds de carte multiples : TopoRando (défaut), OpenStreetMap, World Imagery (Satellite).
-*   Structure prête pour lire les fichiers locaux `.gpx` simultanément.
-*   Panneau récapitulatif avec compteur, et cumuls globaux pour la distance et le dénivelé positif.
-*   **Profil altimétrique interactif** : Cliquez sur une trace pour afficher son graphique d'élévation précis. Au survol de la courbe avec la souris, un curseur mobile s'affiche simultanément sur la carte pour vous situer géographiquement.
-*   **Centrage automatique** : La carte recalibre automatiquement son zoom pour englober toutes vos traces actives de manière fluide (anti-rebond).
-*   **Nettoyage rapide** : Un bouton "Tout effacer" permet de vider le tableau et la carte en un clic.
+*   **Fonds de carte multiples** : Carte Randonnée Topo (OpenTopoMap par défaut), Plan routier (OpenStreetMap) et Vue Satellite (Esri World Imagery).
+*   **Comparaison de traces multiples** : Visualisez simultanément plusieurs traces avec une couleur distincte par parcours (jusqu'à 10 traces recommandées pour une lisibilité optimale).
+*   **Statistiques globales cumulées** : Calcul automatique de la distance totale et du dénivelé positif cumulé (D+) de l'ensemble des parcours affichés.
+*   **Profil altimétrique interactif** : Cliquez sur n'importe quelle trace sur la carte pour afficher sa courbe de dénivelé en bas de l'écran. En passant la souris sur le profil, un marqueur curseur se déplace en direct sur la trace géographique.
+*   **Recentrage automatique** : La carte ajuste automatiquement son cadrage pour englober toutes vos traces actives.
+*   **Nettoyage rapide** : Supprimez une trace individuelle via sa corbeille ou utilisez « Tout effacer » pour réinitialiser la carte.
 
-> 💡 **Conseil d'utilisation :** Il n'y a pas de limite technique bloquante, mais pour garder une lecture de carte optimale et s'assurer que les couleurs des traces restent bien distinctes (10 couleurs différentes générées), il est recommandé de comparer un **maximum de 10 traces simultanément**.
+---
 
-## Configuration Google Drive API (Prévisionnel)
+## Comment charger vos traces ?
 
-Si vous souhaitez héberger cette application et activer le bouton **Google Drive** pour que vos utilisateurs y accèdent :
+Deux modes de chargement sont à votre disposition :
 
-1. Allez sur [Google Cloud Console](https://console.cloud.google.com/).
-2. Créez un nouveau projet.
-3. Allez dans *APIs & Services > Library* et activez **Google Drive API** et **Google Picker API**.
-4. Allez dans *APIs & Services > Credentials* (Identifiants).
-5. Créez une **clé API** (*API key*). Conservez-la.
-6. Créez des **identifiants OAuth 2.0 Client ID**. (Type: Web Application). Ajoutez l'URL de votre site (ou origin `http://localhost` pour le développement) dans **Authorized JavaScript origins**.
-7. Prenez ce **Client ID** et l'**API Key**, et définissez-les plus tard dans le script `app.js` de cette application.
+### 1. Fichiers locaux (Accès libre et immédiat)
+* Cliquez sur **« Ouvrir fichier local »** ou glissez-déposez vos fichiers `.gpx` directement sur la page.
+* **Aucun compte requis** : fonctionne instantanément pour tout le monde, sans inscription, sans compte Google et sans aucune configuration. Vos fichiers sont lus à 100 % localement dans votre navigateur et ne sont envoyés à aucun serveur externe.
 
-> **⚠️ Note Importante : Validation Publique vs Test**
-> L'API Google Drive nécessitant le droit de lecture (`drive.readonly`), l'application a besoin d'une validation humaine par Google si vous la passez en mode "Production" (Publiée). Si vous ne la faites pas vérifier, vous obtiendrez une **erreur serveur (Statut 500)** au moment de vous connecter.
-> 
-> L'état de votre application est visible depuis : `Google Cloud Console` > `API et services` > `Oauth consent screen` (Écrans de consentement) > **Onglet "Audience"**.
-> 
-> **Pour un usage personnel ou en petit club :**
-> Laissez toujours le statut de publication sur **"Testing"** (En cours de test) depuis ce menu. 
-> Assurez-vous simplement que les emails Google des utilisateurs autorisés de votre club sont bien ajoutés dans la liste des **Test users** au même endroit. Vos utilisateurs auront un écran d'avertissement ("Google n'a pas validé cette application"), qu'ils devront contourner via *Paramètres avancés > Continuer*. Cela ne leur sera demandé qu'une seule fois.
+### 2. Depuis Google Drive (Accès sur autorisation)
+* Cliquez sur **« Ouvrir depuis Google Drive »** pour sélectionner vos traces stockées sur votre espace Cloud personnel.
+* **Demande d'autorisation préalable (Phase de test) :**  
+  L'application étant actuellement en phase de test de sécurité auprès de Google, l'accès à Google Drive est réservé aux personnes déclarées dans la liste des **utilisateurs tests**.
+* **Comment devenir testeur ?**  
+  Il vous suffit d'envoyer votre adresse Gmail au développeur à : [yves.balestra@gmail.com](mailto:yves.balestra@gmail.com?subject=Demande%20acc%C3%A8s%20GPX%20Viewer) *(le lien « Demander l'autorisation au développeur » en bas à gauche de l'application prépare ce message automatiquement)*. Une fois votre adresse ajoutée, l'accès à votre Drive est débloqué !
+* **Première connexion :** Google affichera un écran d'avertissement standard de mode test. Cliquez simplement sur *Paramètres avancés*, puis sur *Continuer*.
 
-## Connexion Google Drive : gestion du jeton d'accès
+---
 
-Le bouton **Google Drive** utilise un **jeton d'accès** fourni par Google (Google Identity Services). Ce jeton n'est valable qu'**environ 1 heure**.
+## Connexion Google Drive : durée de session
 
-*   **Expiration gérée automatiquement** (depuis la **v1.1.0**, octobre 2026) : l'application mémorise l'heure d'expiration du jeton (avec 60 s de marge). Au clic suivant sur le bouton, un jeton expiré est redemandé automatiquement, sans recharger la page.
-*   **Premier clic** : écran de consentement complet (`prompt: 'consent'`). **Renouvellements** : demande rapide (`prompt: ''`), une fenêtre Google peut s'ouvrir brièvement.
-*   **Erreur 401 au téléchargement d'un fichier** : le jeton est oublié et l'utilisateur est invité à recliquer pour se reconnecter.
-*   **Messages d'erreur explicites** au lieu d'un clic sans effet :
-    *   accès refusé (`access_denied`) : bouton « Annuler » ou adresse Gmail absente des *Test users* ;
-    *   fenêtre de connexion bloquée par le navigateur (`popup_failed_to_open`) : autoriser les pop-ups pour le site ;
-    *   fenêtre fermée par l'utilisateur (`popup_closed`) : aucune alerte.
+Pour des raisons de sécurité imposées par Google, chaque autorisation dure environ 1 heure :
+* **Renouvellement automatique** : Si votre session expire après une longue période d'inactivité, l'application redemande automatiquement un jeton au clic suivant, sans que vous ayez à recharger la page.
+* **Confidentialité totale** : L'application n'a accès qu'à la lecture des fichiers que vous sélectionnez vous-même dans la fenêtre Google Drive. Elle ne peut ni modifier ni supprimer vos données.
 
-> 💡 Avant cette correction, une page restée ouverte plus d'une heure réutilisait un jeton expiré : le bouton Drive semblait ne plus fonctionner jusqu'au rechargement de la page (F5).
+---
 
 ## Documentation
 
-*   [Guides/Guide_Adherent_GPX_Viewer.docx](Guides/Guide_Adherent_GPX_Viewer.docx) : guide pour les adhérents (accès, connexion, utilisation, problèmes fréquents).
-*   [AIDE_MEMOIRE_DEPLOIEMENT.md](AIDE_MEMOIRE_DEPLOIEMENT.md) : pièges et astuces de déploiement.
+*   [Guides/Guide_Adherent_GPX_Viewer.docx](Guides/Guide_Adherent_GPX_Viewer.docx) : guide complet pour les utilisateurs et adhérents (accès, connexion Google Drive, utilisation pas à pas et résolution des problèmes fréquents).
+*   [AIDE_MEMOIRE_DEPLOIEMENT.md](AIDE_MEMOIRE_DEPLOIEMENT.md) : pense-bête technique pour le déploiement et l'hébergement GitHub Pages.
+
+---
 
 ## Historique des versions
 
@@ -68,6 +60,3 @@ Le bouton **Google Drive** utilise un **jeton d'accès** fourni par Google (Goog
 | **1.2.0** | Octobre 2026 | Fermeture et nettoyage automatique du profil altimétrique lors de la suppression d'une trace ou lors du clic sur « Tout effacer » ; ajout du script Inno Setup (`setup.iss`) et génération de l'installateur Windows `Setup_GPX_Viewer_v1.2.0.exe` ; sécurisation de la clé API Google (référents HTTP et restrictions d'API). |
 | **1.1.0** | Octobre 2026 | Gestion de l'expiration du jeton Google (≈ 1 h) avec renouvellement automatique ; messages d'erreur clairs (accès refusé, pop-up bloquée, session expirée) ; restauration du logo `favicon.png` ; guides adhérent et développeur. |
 | 1.0.0 | Février 2026 | Première version : traces GPX multiples (local et Google Drive), statistiques, profil altimétrique, fonds de carte. |
-
-> Lors d'une nouvelle version, mettre à jour : le numéro affiché en bas de `index.html`, le paramètre `?v=` de `app.js` / `style.css` dans `index.html` (si ces fichiers ont changé), ce README et les guides.
-
