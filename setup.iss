@@ -1,7 +1,7 @@
 [Setup]
 ; Informations de l'application
 AppName=GPX Viewer
-AppVersion=1.2.0
+AppVersion=1.3.0
 AppPublisher=Yves Balestra
 AppPublisherURL=https://tresorier21000.github.io/GPX_Viewer/
 AppSupportURL=https://tresorier21000.github.io/GPX_Viewer/
@@ -13,7 +13,7 @@ DefaultGroupName=GPX Viewer
 
 ; Dossier et nom du fichier d'installation généré
 OutputDir=.
-OutputBaseFilename=Setup_GPX_Viewer_v1.2.0
+OutputBaseFilename=Setup_GPX_Viewer_v1.3.0
 SetupIconFile=favicon.ico
 Compression=lzma
 SolidCompression=yes
@@ -40,6 +40,7 @@ Source: "Traces\*"; DestDir: "{app}\Traces"; Flags: ignoreversion recursesubdirs
 [Icons]
 ; Raccourci dans le menu Démarrer
 Name: "{group}\GPX Viewer"; Filename: "{app}\index.html"; IconFilename: "{app}\favicon.ico"
+Name: "{group}\GPX Viewer en ligne (Google Drive)"; Filename: "https://tresorier21000.github.io/GPX_Viewer/"
 Name: "{group}\Désinstaller GPX Viewer"; Filename: "{uninstallexe}"
 
 ; Raccourci sur le Bureau

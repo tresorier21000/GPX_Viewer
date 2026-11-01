@@ -1,11 +1,23 @@
 # GPX Viewer
 
-**Version actuelle : 1.2.0** (octobre 2026) – voir l'[historique des versions](#historique-des-versions).
+**Version actuelle : 1.3.0** (novembre 2026) – voir l'[historique des versions](#historique-des-versions).
 
 Application web permettant d'afficher et de comparer des traces GPX sur une carte interactive, avec prise en charge d'un chargement de fichiers multiples.
 
-👉 **Accès en ligne direct : [https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**  
-*(Rien à installer : fonctionne directement dans n'importe quel navigateur web moderne sur ordinateur, tablette ou smartphone).*
+👉 **Accès en ligne direct (recommandé) : [https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**  
+*(Rien à installer : fonctionne directement dans n'importe quel navigateur web moderne sur ordinateur, tablette ou smartphone, avec accès complet à Google Drive).*
+
+---
+
+## Deux façons d'utiliser GPX Viewer
+
+1. **Version en ligne (recommandée) : [https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**
+   * Accès complet à toutes les fonctionnalités : fichiers locaux ET ouverture directe depuis votre Google Drive.
+   * Toujours à jour sans aucune installation.
+
+2. **Version installable Windows (`Setup_GPX_Viewer_v1.3.0.exe`)**
+   * Idéale pour travailler hors-ligne avec vos traces `.gpx` stockées sur votre ordinateur via le bouton **« Ouvrir fichier local »**.
+   * *Remarque Google Drive :* Pour des raisons de sécurité imposées par Google, l'authentification Google Drive est strictement interdite sur les fichiers ouverts en local (`file://`). Si vous cliquez sur « Ouvrir depuis Google Drive » depuis la version installée, l'application vous proposera d'ouvrir en un clic la version en ligne officielle pour accéder à votre Drive.
 
 ---
 
@@ -28,8 +40,9 @@ Deux modes de chargement sont à votre disposition :
 * Cliquez sur **« Ouvrir fichier local »** ou glissez-déposez vos fichiers `.gpx` directement sur la page.
 * **Aucun compte requis** : fonctionne instantanément pour tout le monde, sans inscription, sans compte Google et sans aucune configuration. Vos fichiers sont lus à 100 % localement dans votre navigateur et ne sont envoyés à aucun serveur externe.
 
-### 2. Depuis Google Drive (Accès sur autorisation)
+### 2. Depuis Google Drive (Accès sur autorisation, en ligne)
 * Cliquez sur **« Ouvrir depuis Google Drive »** pour sélectionner vos traces stockées sur votre espace Cloud personnel.
+* **Disponible sur la version en ligne** ([https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)).
 * **Demande d'autorisation préalable (Phase de test) :**  
   L'application étant actuellement en phase de test de sécurité auprès de Google, l'accès à Google Drive est réservé aux personnes déclarées dans la liste des **utilisateurs tests**.
 * **Comment devenir testeur ?**  
@@ -57,6 +70,8 @@ Pour des raisons de sécurité imposées par Google, chaque autorisation dure en
 
 | Version | Date | Changements |
 |---|---|---|
+| **1.3.0** | Novembre 2026 | Détection automatique du protocole local `file://` avec proposition de bascule en un clic vers la version en ligne pour Google Drive ; ajout d'un raccourci web dans le menu Démarrer de l'installateur Windows (`setup.iss`) ; clarification dans la documentation. |
 | **1.2.0** | Octobre 2026 | Fermeture et nettoyage automatique du profil altimétrique lors de la suppression d'une trace ou lors du clic sur « Tout effacer » ; ajout du script Inno Setup (`setup.iss`) et génération de l'installateur Windows `Setup_GPX_Viewer_v1.2.0.exe` ; sécurisation de la clé API Google (référents HTTP et restrictions d'API). |
 | **1.1.0** | Octobre 2026 | Gestion de l'expiration du jeton Google (≈ 1 h) avec renouvellement automatique ; messages d'erreur clairs (accès refusé, pop-up bloquée, session expirée) ; restauration du logo `favicon.png` ; guides adhérent et développeur. |
 | 1.0.0 | Février 2026 | Première version : traces GPX multiples (local et Google Drive), statistiques, profil altimétrique, fonds de carte. |
+

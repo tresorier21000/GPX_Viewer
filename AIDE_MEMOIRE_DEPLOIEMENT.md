@@ -15,6 +15,13 @@ Vous devez toujours **simuler un vrai serveur internet sur votre ordinateur**.
 *   **Outil recommandé :** L'extension gratuite "Live Server" sur *Visual Studio Code*.
 *   **Résultat :** Au lieu de `file:///...`, l'adresse du navigateur devient `http://127.0.0.1:5500` ou `http://localhost:5500`. À ce moment-là, Google et le navigateur acceptent de discuter avec votre code.
 
+**Cas particulier des Installateurs Windows (Inno Setup / `.exe`) :**
+Si vous créez un installateur Windows (`setup.iss`) qui installe `index.html` sur le disque dur de l'utilisateur (`C:\Program Files\...`) :
+* Le raccourci Bureau ouvre la page avec le protocole `file:///`.
+* Les fonctions locales (carte, profils altimétriques, lecture des fichiers GPX du disque) fonctionnent à 100 %.
+* **Mais Google Drive ne fonctionnera JAMAIS en `file:///`** (Google interdit ce protocole et n'autorise que `http://` et `https://`).
+* **Bonne pratique appliquée dans GPX Viewer (v1.3.0) :** détecter `window.location.protocol === 'file:'` et proposer à l'utilisateur d'ouvrir la version en ligne en 1 clic s'il souhaite accéder à son Drive.
+
 ---
 
 ## 🔒 2. Configuration Google Cloud Console (Le Labyrinthe)

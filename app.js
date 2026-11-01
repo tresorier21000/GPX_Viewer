@@ -511,6 +511,16 @@ function setupDriveButton() {
     const driveBtn = document.getElementById('btn-google-drive');
     if (!driveBtn) return;
 
+    // Détection du mode local (file:///) : adapter le message d'aide en bas de la barre latérale
+    if (window.location.protocol === 'file:') {
+        const driveNotice = document.getElementById('drive-access-notice');
+        if (driveNotice) {
+            driveNotice.innerHTML = `⚠️ <strong>Application locale (file://)</strong><br>` +
+                `Google interdit la connexion Cloud en local. Pour ouvrir votre Drive, utilisez la ` +
+                `<a href="https://tresorier21000.github.io/GPX_Viewer/" target="_blank" style="color: var(--primary-color); text-decoration: underline; font-weight: bold;">version en ligne officielle</a>.`;
+        }
+    }
+
     if (window.pickerInited && window.gisInited) {
         driveBtn.disabled = false;
     }
@@ -520,6 +530,18 @@ function setupDriveButton() {
     driveBtn.dataset.listenerAttached = 'true';
 
     driveBtn.addEventListener('click', () => {
+        // En mode local (file://), Google interdit l'accès OAuth / Drive
+        if (window.location.protocol === 'file:') {
+            const confirmed = confirm(
+                "L'accès à Google Drive n'est pas autorisé par Google depuis une application installée sur l'ordinateur (protocole file://).\n\n" +
+                "Souhaitez-vous ouvrir la version en ligne officielle (https://tresorier21000.github.io/GPX_Viewer/) pour accéder à votre Google Drive ?"
+            );
+            if (confirmed) {
+                window.open('https://tresorier21000.github.io/GPX_Viewer/', '_blank');
+            }
+            return;
+        }
+
         if (!window.pickerInited || !window.gisInited) {
             alert('L\'API Google est en cours de chargement. Veuillez patienter.');
             return;
