@@ -789,8 +789,3 @@ path.leaflet-interactive {
 .drive-table-wrapper { contain: content; }
 .drive-table tr[data-id] { user-select: none; }
 #drive-check-all:disabled { opacity: 0.3; cursor: not-allowed; }
-
-.drive-more {
-    display: block;
-    margin: 0.75rem auto 1rem;
-}
