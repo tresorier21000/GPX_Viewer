@@ -98,15 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Dossier : ${allFiles.length} fichier(s) trouvé(s)`);
             // Nom du dossier choisi (premier élément du chemin relatif)
             const folderName = (allFiles[0].webkitRelativePath || '').split('/')[0] || 'dossier';
-            const files = allFiles.filter(f => window.matchesSelectedFormat(f.name));
-            if (files.length === 0) {
-                alert(`Aucun fichier ${window.formatLabel()} trouvé dans le dossier « ${folderName} ».\n\nVérifiez le type de fichier sélectionné.`);
-                return;
-            }
-            if (files.length > 20 && !confirm(`Le dossier « ${folderName} » contient ${files.length} fichiers ${window.formatLabel()}.\nLes afficher tous ? (au-delà de 10 traces, la carte devient peu lisible)`)) {
-                return;
-            }
-            files.forEach(readLocalFile);
+            // Affiche le contenu du dossier pour choisir les traces (filtrées selon le type choisi)
+            window.openLocalFolderExplorer(allFiles, folderName);
         });
     }
 
@@ -191,6 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         files.forEach(readLocalFile);
     });
+
+    window.readLocalFileGlobal = readLocalFile;
 
     fileInput.addEventListener('change', (e) => {
         const allFiles = Array.from(e.target.files);

@@ -23,7 +23,20 @@ const driveInventory = {
     folders: {}     // id -> { id, name, parent }
 };
 
+// Inventaire d'un dossier local (bouton « Ouvrir un dossier local »)
+const localInventory = {
+    loaded: true,
+    rootName: '',
+    files: []       // { id, name, ext, modifiedTime, folderId, folderPath, file }
+};
+
+// La même fenêtre sert pour Google Drive et pour un dossier local
+function currentInventory() {
+    return explorerState.mode === 'local' ? localInventory : driveInventory;
+}
+
 const explorerState = {
+    mode: 'drive',         // 'drive' | 'local'
     tab: 'files',          // 'files' | 'folders'
     search: '',
     sortKey: 'name',       // 'name' | 'folder' | 'date'
@@ -118,7 +131,7 @@ async function loadDriveInventory() {
 
 // Fichiers correspondant au type choisi dans la barre latérale
 function visibleFiles() {
-    return driveInventory.files.filter(f => window.matchesSelectedFormat(f.name));
+    return currentInventory().files.filter(f => window.matchesSelectedFormat(f.name));
 }
 
 function formatDate(iso) {
@@ -132,12 +145,15 @@ function renderExplorer() {
     const body = document.getElementById('drive-explorer-body');
     const label = window.formatLabel();
     document.getElementById('drive-explorer-format').textContent = label;
+    const isLocal = explorerState.mode === 'local';
+    document.getElementById('drive-explorer-source').textContent = isLocal ? `Dossier « ${localInventory.rootName} »` : 'Google Drive';
+    document.getElementById('drive-explorer-refresh').style.display = isLocal ? 'none' : '';
     document.getElementById('drive-format').value = window.getSelectedFormat();
     document.querySelectorAll('.drive-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === explorerState.tab);
     });
 
-    if (!driveInventory.loaded) {
+    if (!currentInventory().loaded) {
         body.innerHTML = `<div class="drive-empty"><div class="drive-spinner"></div>Inventaire de votre Google Drive en cours…</div>`;
         updateFooter();
         return;
@@ -145,7 +161,7 @@ function renderExplorer() {
 
     const files = visibleFiles();
     if (files.length === 0) {
-        body.innerHTML = `<div class="drive-empty">Aucun fichier ${escapeHtml(label)} trouvé dans votre Google Drive.<br>Vérifiez le type de fichier choisi dans la barre latérale.</div>`;
+        body.innerHTML = `<div class="drive-empty">Aucun fichier ${escapeHtml(label)} trouvé ${isLocal ? 'dans ce dossier' : 'dans votre Google Drive'}.<br>Vérifiez le type de fichier choisi dans la barre latérale.</div>`;
         updateFooter();
         return;
     }
@@ -322,7 +338,7 @@ function bindRowSelection(body) {
 
 function updateFooter() {
     const btn = document.getElementById('drive-explorer-open');
-    const n = explorerState.selected.size;
+    const n = currentInventory().loaded ? visibleFiles().filter(f => explorerState.selected.has(f.id)).length : 0;
     btn.disabled = n === 0;
     btn.textContent = n > 0 ? `Afficher la sélection (${n})` : 'Afficher la sélection';
 }
@@ -331,12 +347,46 @@ function updateFooter() {
 
 async function openDriveExplorer() {
     const modal = document.getElementById('drive-explorer');
+    explorerState.mode = 'drive';
+    explorerState.search = '';
     explorerState.selected.clear();
     modal.style.display = 'flex';
     renderExplorer();
     if (!driveInventory.loaded) {
         await refreshDriveInventory();
     }
+}
+
+// Affiche le contenu d'un dossier local choisi dans la fenêtre Windows/Mac
+// (cette fenêtre système ne montre que les sous-dossiers, jamais les fichiers)
+function openLocalFolderExplorer(fileList, rootName) {
+    localInventory.rootName = rootName;
+    localInventory.files = Array.from(fileList).map((file, i) => {
+        const parts = (file.webkitRelativePath || file.name).split('/');
+        parts.pop();
+        const folder = parts.join(' / ') || rootName;
+        return {
+            id: 'local-' + i,
+            name: file.name,
+            ext: window.getFileExtension(file.name),
+            modifiedTime: file.lastModified ? new Date(file.lastModified).toISOString() : '',
+            folderId: folder,
+            folderPath: folder,
+            file
+        };
+    }).filter(f => ['gpx', 'fit', 'trk'].includes(f.ext));
+
+    explorerState.mode = 'local';
+    explorerState.tab = 'files';
+    explorerState.search = '';
+    explorerState.openFolderId = null;
+    explorerState.selected.clear();
+    // Petit dossier : tout est pré-coché, il suffit de cliquer sur « Afficher la sélection »
+    const visible = visibleFiles();
+    if (visible.length <= CHECK_ALL_MAX) visible.forEach(f => explorerState.selected.add(f.id));
+
+    document.getElementById('drive-explorer').style.display = 'flex';
+    renderExplorer();
 }
 
 async function refreshDriveInventory() {
@@ -357,6 +407,10 @@ function closeDriveExplorer() {
 }
 
 async function loadDriveSelection(files) {
+    if (explorerState.mode === 'local') {
+        files.forEach(f => window.readLocalFileGlobal(f.file));
+        return;
+    }
     for (const file of files) {
         try {
             await loadDriveFile(file.id, file.name);
@@ -389,7 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     document.getElementById('drive-explorer-open').addEventListener('click', () => {
-        const chosen = driveInventory.files.filter(f => explorerState.selected.has(f.id));
+        // Seules les traces cochées ET visibles (type de fichier choisi) sont chargées
+        const chosen = visibleFiles().filter(f => explorerState.selected.has(f.id));
         if (chosen.length > 20 && !confirm(`Afficher ${chosen.length} parcours ?\n(au-delà de 10 traces, la carte devient peu lisible)`)) {
             return;
         }
@@ -411,3 +466,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.openDriveExplorer = openDriveExplorer;
+window.openLocalFolderExplorer = openLocalFolderExplorer;
