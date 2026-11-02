@@ -13,7 +13,7 @@ Application web permettant d'afficher et de comparer des traces **GPX, FIT et TR
 
 *   **Trois formats de traces** : en plus du `.gpx`, l'application lit les fichiers `.fit` (Garmin, Wahoo…) et `.trk` (TwoNav, CompeGPS…). Chaque trace affiche un badge indiquant son format.
 *   **Choix du type de fichier** : un sélecteur en haut de la barre latérale (GPX par défaut, FIT, TRK ou Tous) filtre les fichiers proposés et chargés, en local comme sur Google Drive.
-*   **Ouverture d'un dossier local** : le bouton « Ouvrir un dossier local » affiche d'un coup toutes les traces du type choisi contenues dans un dossier (sous-dossiers compris).
+*   **Ouverture d'un dossier local** : le bouton « Ouvrir un dossier local » liste les traces du type choisi contenues dans un dossier (sous-dossiers compris) pour choisir celles à afficher.
 *   **Glisser-déposer** : déposez vos fichiers directement sur la page.
 *   **Nouvel explorateur Google Drive** intégré à l'application, qui remplace la fenêtre Google :
     *   onglet **Tous mes parcours** : liste de vos traces avec une colonne **Dossier**, la date, une recherche et un tri par colonne ;
@@ -57,7 +57,7 @@ Choisissez d'abord le type de fichier, puis l'un des deux modes de chargement :
 
 ### 1. Fichiers locaux (Accès libre et immédiat)
 * Cliquez sur **« Ouvrir fichier(s) local »** ou glissez-déposez vos fichiers directement sur la page.
-* Cliquez sur **« Ouvrir un dossier local »** pour choisir un dossier dans une fenêtre : toutes les traces du type choisi qu'il contient (sous-dossiers compris) s'affichent d'un coup.
+* Cliquez sur **« Ouvrir un dossier local »** pour choisir un dossier dans une fenêtre. *(La fenêtre Windows de choix de dossier n'affiche que les sous-dossiers, jamais les fichiers : c'est normal, cliquez simplement sur « Importer ».)* Une fenêtre de l'application liste alors les traces du dossier (sous-dossiers compris), avec leur nombre, une recherche et un tri : cochez celles à afficher. Pour un dossier de 20 traces au plus, tout est déjà coché.
 * **Aucun compte requis** : fonctionne instantanément pour tout le monde, sans inscription, sans compte Google et sans aucune configuration. Vos fichiers sont lus à 100 % localement dans votre navigateur et ne sont envoyés à aucun serveur externe.
 
 ### 2. Depuis Google Drive (Accès sur autorisation, en ligne)
