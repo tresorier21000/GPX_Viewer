@@ -87,7 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
         folderInput.addEventListener('change', (e) => {
             const allFiles = Array.from(e.target.files);
             folderInput.value = '';
-            if (allFiles.length === 0) return;
+            if (allFiles.length === 0) {
+                // Cas typique : dossier vide, ou dossier Google Drive pour ordinateur (G:) dont les
+                // fichiers ne sont pas disponibles hors connexion : le navigateur n'en voit aucun.
+                alert("Le navigateur n'a trouvé aucun fichier dans ce dossier.\n\n" +
+                    "S'il s'agit d'un dossier Google Drive sur votre ordinateur (lecteur G:), rendez-le d'abord " +
+                    "« disponible hors connexion » (clic droit), ou utilisez le bouton « Ouvrir depuis Google Drive ».");
+                return;
+            }
+            console.log(`Dossier : ${allFiles.length} fichier(s) trouvé(s)`);
             // Nom du dossier choisi (premier élément du chemin relatif)
             const folderName = (allFiles[0].webkitRelativePath || '').split('/')[0] || 'dossier';
             const files = allFiles.filter(f => window.matchesSelectedFormat(f.name));
