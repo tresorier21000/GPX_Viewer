@@ -44,9 +44,63 @@ document.addEventListener('DOMContentLoaded', () => {
     const localFileBtn = document.getElementById('btn-local-file');
     const fileInput = document.getElementById('gpx-file-input');
 
+    const folderBtn = document.getElementById('btn-local-folder');
+    const folderInput = document.getElementById('folder-input');
+
+    // Type de fichier choisi (GPX par défaut) : filtre l'ouverture locale et Google Drive
+    window.getSelectedFormat = function () {
+        const checked = document.querySelector('input[name="track-format"]:checked');
+        return checked ? checked.value : 'gpx';
+    };
+    window.SUPPORTED_EXTENSIONS = ['gpx', 'fit', 'trk'];
+    window.getFileExtension = function (fileName) {
+        const parts = (fileName || '').split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    };
+    // Le fichier correspond-il au type choisi ?
+    window.matchesSelectedFormat = function (fileName) {
+        const ext = window.getFileExtension(fileName);
+        const format = window.getSelectedFormat();
+        return format === 'all' ? window.SUPPORTED_EXTENSIONS.includes(ext) : ext === format;
+    };
+    window.formatLabel = function () {
+        const format = window.getSelectedFormat();
+        return format === 'all' ? 'GPX, FIT ou TRK' : format.toUpperCase();
+    };
+
+    function updateAcceptAttribute() {
+        const format = window.getSelectedFormat();
+        fileInput.accept = format === 'all' ? '.gpx,.fit,.trk' : '.' + format;
+    }
+    document.querySelectorAll('input[name="track-format"]').forEach(radio => {
+        radio.addEventListener('change', updateAcceptAttribute);
+    });
+    updateAcceptAttribute();
+
     localFileBtn.addEventListener('click', () => {
+        updateAcceptAttribute();
         fileInput.click();
     });
+
+    if (folderBtn && folderInput) {
+        folderBtn.addEventListener('click', () => folderInput.click());
+        folderInput.addEventListener('change', (e) => {
+            const allFiles = Array.from(e.target.files);
+            folderInput.value = '';
+            if (allFiles.length === 0) return;
+            // Nom du dossier choisi (premier élément du chemin relatif)
+            const folderName = (allFiles[0].webkitRelativePath || '').split('/')[0] || 'dossier';
+            const files = allFiles.filter(f => window.matchesSelectedFormat(f.name));
+            if (files.length === 0) {
+                alert(`Aucun fichier ${window.formatLabel()} trouvé dans le dossier « ${folderName} ».\n\nVérifiez le type de fichier sélectionné.`);
+                return;
+            }
+            if (files.length > 20 && !confirm(`Le dossier « ${folderName} » contient ${files.length} fichiers ${window.formatLabel()}.\nLes afficher tous ? (au-delà de 10 traces, la carte devient peu lisible)`)) {
+                return;
+            }
+            files.forEach(readLocalFile);
+        });
+    }
 
     // État global de l'application
     const appState = {
@@ -99,26 +153,195 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    fileInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 0) {
-            console.log(`${files.length} fichier(s) sélectionné(s)`);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const gpxContent = event.target.result;
-                    loadGpxTrack(gpxContent, file.name);
-                };
-                reader.readAsText(file);
-            });
-            // Réinitialiser l'input pour permettre de re-sélectionner le même fichier si besoin
-            fileInput.value = '';
+    // Lecture d'un fichier local selon son extension
+    function readLocalFile(file) {
+        const ext = window.getFileExtension(file.name);
+        const reader = new FileReader();
+        reader.onerror = () => alert(`Impossible de lire le fichier "${file.name}".`);
+        if (ext === 'fit') {
+            reader.onload = (event) => loadFitTrack(event.target.result, file.name);
+            reader.readAsArrayBuffer(file);
+        } else if (ext === 'trk') {
+            reader.onload = (event) => loadTrkTrack(event.target.result, file.name);
+            reader.readAsText(file);
+        } else {
+            // GPX par défaut
+            reader.onload = (event) => loadGpxTrack(event.target.result, file.name);
+            reader.readAsText(file);
         }
+    }
+
+    // Glisser-déposer des fichiers sur la page (même filtrage par type)
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const allFiles = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+        if (allFiles.length === 0) return;
+        const files = allFiles.filter(f => window.matchesSelectedFormat(f.name));
+        if (files.length < allFiles.length) {
+            alert(`${allFiles.length - files.length} fichier(s) ignoré(s) : ils ne sont pas au format ${window.formatLabel()}.`);
+        }
+        files.forEach(readLocalFile);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        const allFiles = Array.from(e.target.files);
+        // Réinitialiser l'input pour permettre de re-sélectionner le même fichier si besoin
+        fileInput.value = '';
+        if (allFiles.length === 0) return;
+        const files = allFiles.filter(f => window.matchesSelectedFormat(f.name));
+        const ignored = allFiles.length - files.length;
+        if (ignored > 0) {
+            alert(`${ignored} fichier(s) ignoré(s) : ils ne sont pas au format ${window.formatLabel()}.`);
+        }
+        console.log(`${files.length} fichier(s) sélectionné(s)`);
+        files.forEach(readLocalFile);
     });
 
     /**
      * Charge une trace GPX sur la carte et met à jour l'état
      */
+    /**
+     * Crée et affiche une trace issue d'un format décodé personnalisé (FIT ou TRK)
+     */
+    function createCustomTrack(points, fileName, format) {
+        if (!points || points.length < 2) {
+            alert(`La trace ${fileName} ne contient pas assez de points valides.`);
+            return;
+        }
+
+        const trackColor = window.trackColors[window.colorIndex % window.trackColors.length];
+        window.colorIndex++;
+        const trackId = 'track-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+        const metrics = window.computeTrackMetrics(points);
+        const flatLatLngs = points.map(p => L.latLng(p.lat, p.lng));
+
+        const polyline = L.polyline(flatLatLngs, {
+            color: trackColor,
+            weight: 4,
+            opacity: 0.8,
+            lineCap: 'round',
+            lineJoin: 'round'
+        });
+
+        // Icônes de départ et d'arrivée
+        const startIcon = L.icon({
+            iconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-start.png',
+            iconSize: [33, 50],
+            iconAnchor: [16, 45],
+            shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-shadow.png',
+            shadowSize: [50, 50],
+            shadowAnchor: [16, 45]
+        });
+        const endIcon = L.icon({
+            iconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-end.png',
+            iconSize: [33, 50],
+            iconAnchor: [16, 45],
+            shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-shadow.png',
+            shadowSize: [50, 50],
+            shadowAnchor: [16, 45]
+        });
+
+        const startMarker = L.marker(flatLatLngs[0], { icon: startIcon });
+        const endMarker = L.marker(flatLatLngs[flatLatLngs.length - 1], { icon: endIcon });
+
+        const trackGroup = L.featureGroup([polyline, startMarker, endMarker]).addTo(map);
+
+        // Événement de clic pour le profil altimétrique
+        const cleanName = fileName.replace(/\.[^/.]+$/, '');
+        polyline.on('click', () => {
+            showElevationProfile(metrics.elevationData, flatLatLngs, cleanName, trackColor, trackId);
+        });
+
+        // Flèches directionnelles régulières
+        let arrowDecorator = null;
+        if (flatLatLngs.length > 1 && typeof L.polylineDecorator === 'function') {
+            try {
+                arrowDecorator = L.polylineDecorator(flatLatLngs, {
+                    patterns: [
+                        {
+                            offset: '25px',
+                            repeat: '75px',
+                            symbol: L.Symbol.arrowHead({
+                                pixelSize: 10,
+                                polygon: false,
+                                pathOptions: {
+                                    stroke: true,
+                                    color: trackColor,
+                                    weight: 2,
+                                    opacity: 0.85
+                                }
+                            })
+                        }
+                    ]
+                }).addTo(map);
+            } catch (err) {
+                console.warn("Impossible d'ajouter les flèches sur la trace :", err);
+            }
+        }
+
+        map.fitBounds(trackGroup.getBounds());
+
+        const trackData = {
+            id: trackId,
+            name: cleanName,
+            format: format,
+            gpxLayer: trackGroup,
+            arrowDecorator: arrowDecorator,
+            distance: metrics.distanceKm,
+            elevationGain: metrics.elevationGainM,
+            color: trackColor
+        };
+
+        appState.tracks.push(trackData);
+        updateDashboard();
+
+        clearTimeout(window.fitBoundsTimeout);
+        window.fitBoundsTimeout = setTimeout(() => {
+            if (appState.tracks.length > 1) {
+                const group = new L.featureGroup(appState.tracks.map(t => t.gpxLayer));
+                map.fitBounds(group.getBounds(), { padding: [20, 20] });
+            }
+        }, 300);
+    }
+
+    /**
+     * Charge une trace binaire FIT
+     */
+    function loadFitTrack(arrayBuffer, fileName) {
+        try {
+            if (typeof window.parseFit !== 'function') {
+                throw new Error("Le module de décodage FIT n'est pas chargé.");
+            }
+            const points = window.parseFit(arrayBuffer);
+            createCustomTrack(points, fileName, 'FIT');
+        } catch (err) {
+            console.error("Erreur lecture FIT :", err);
+            alert(`Impossible de lire le fichier FIT "${fileName}" :\n${err.message}`);
+        }
+    }
+
+    /**
+     * Charge une trace texte TRK
+     */
+    function loadTrkTrack(textContent, fileName) {
+        try {
+            if (typeof window.parseTrk !== 'function') {
+                throw new Error("Le module de décodage TRK n'est pas chargé.");
+            }
+            const points = window.parseTrk(textContent);
+            createCustomTrack(points, fileName, 'TRK');
+        } catch (err) {
+            console.error("Erreur lecture TRK :", err);
+            alert(`Impossible de lire le fichier TRK "${fileName}" :\n${err.message}`);
+        }
+    }
+
+    // Exposer globalement pour Google Drive Picker
+    window.loadFitTrackGlobal = loadFitTrack;
+    window.loadTrkTrackGlobal = loadTrkTrack;
+
     function loadGpxTrack(gpxContent, fileName) {
         const trackColor = window.trackColors[window.colorIndex % window.trackColors.length];
         window.colorIndex++;
@@ -219,7 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const trackData = {
                 id: trackId,
-                name: fileName.replace('.gpx', ''),
+                name: fileName.replace(/\.[^/.]+$/, ''),
+                format: 'GPX',
                 gpxLayer: gpxLayer,
                 arrowDecorator: arrowDecorator,
                 distance: distance,
@@ -269,7 +493,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const nameDiv = document.createElement('div');
             nameDiv.className = 'track-name';
-            nameDiv.innerHTML = `<span class="track-color-indicator" style="background-color: ${track.color};"></span>${track.name}`;
+            const badgeClass = track.format ? `badge-${track.format.toLowerCase()}` : 'badge-gpx';
+            const formatText = track.format || 'GPX';
+            nameDiv.innerHTML = `<span class="track-color-indicator" style="background-color: ${track.color};"></span>${track.name}<span class="track-format-badge ${badgeClass}">${formatText}</span>`;
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-delete';
@@ -614,76 +840,172 @@ function setupDriveButton() {
 // On l'appelle aussi au cas où le DOMContentLoaded se déclenche APRES gapi
 document.addEventListener('DOMContentLoaded', setupDriveButton);
 
+// Types MIME que Google Drive attribue habituellement aux fichiers GPX, FIT et TRK
+// (le filtrage final se fait sur l'extension du nom de fichier, selon le type choisi)
+const TRACK_MIME_TYPES = [
+    'application/gpx+xml', 'application/gpx', 'application/xml', 'text/xml',
+    'application/vnd.ant.fit', 'application/fit', 'application/x-fit',
+    'application/x-trk', 'application/octet-stream', 'text/plain'
+].join(',');
+const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
+
 function createPicker() {
-    const view = new google.picker.DocsView(google.picker.ViewId.DOCS);
-    view.setIncludeFolders(true); // Permet de voir et naviguer dans les dossiers
-    // On autorise les fichiers GPX/XML et aussi le type de dossier Google Drive pour pouvoir naviguer
-    view.setMimeTypes('application/octet-stream,application/gpx+xml,text/xml,application/vnd.google-apps.folder');
+    const label = window.formatLabel ? window.formatLabel() : 'GPX';
+
+    // Onglet 1 : "Tous mes parcours" (vue plate de tous les fichiers, sans dossiers)
+    const allFilesView = new google.picker.DocsView(google.picker.ViewId.DOCS);
+    allFilesView.setLabel(`Tous mes parcours (${label})`);
+    allFilesView.setIncludeFolders(false);
+    allFilesView.setMimeTypes(TRACK_MIME_TYPES);
+
+    // Onglet 2 : "Parcourir mes dossiers" (arborescence, sélection de fichiers)
+    const foldersView = new google.picker.DocsView(google.picker.ViewId.DOCS);
+    foldersView.setLabel('Parcourir mes dossiers');
+    foldersView.setIncludeFolders(true);
+    foldersView.setMimeTypes(TRACK_MIME_TYPES + ',' + FOLDER_MIME_TYPE);
+
+    // Onglet 3 : "Choisir un dossier" (toutes les traces du dossier choisi seront chargées)
+    const pickFolderView = new google.picker.DocsView(google.picker.ViewId.FOLDERS);
+    pickFolderView.setLabel('Choisir un dossier');
+    pickFolderView.setIncludeFolders(true);
+    pickFolderView.setSelectFolderEnabled(true);
+    pickFolderView.setMimeTypes(FOLDER_MIME_TYPE);
 
     const picker = new google.picker.PickerBuilder()
-        // On retire NAV_HIDDEN pour afficher le panneau latéral
         .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
         .setDeveloperKey(API_KEY)
         .setAppId(APP_ID)
         .setOAuthToken(window.accessToken)
-        .addView(view)
+        .setLocale('fr')
+        .setTitle(`Sélectionnez des fichiers ${label} ou un dossier`)
+        .addView(allFilesView)
+        .addView(foldersView)
+        .addView(pickFolderView)
         .addView(new google.picker.DocsUploadView())
         .setCallback(pickerCallback)
-        .setSize(850, 600)
+        .setSize(900, 600)
         .build();
     picker.setVisible(true);
 }
 
-async function pickerCallback(data) {
-    if (data.action === google.picker.Action.PICKED) {
-        console.log("Fichiers Drive sélectionnés :", data.docs);
-        const documents = data.docs;
+// Erreur dédiée pour interrompre proprement le chargement si le jeton a expiré
+class DriveSessionExpiredError extends Error {}
 
-        for (const doc of documents) {
-            const fileId = doc.id;
-            const fileName = doc.name;
+async function driveFetch(url) {
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${window.accessToken}` }
+    });
+    if (response.status === 401) {
+        resetToken();
+        throw new DriveSessionExpiredError('Session Google expirée');
+    }
+    if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+    }
+    return response;
+}
 
-            try {
-                // Télécharger le contenu du fichier via un Fetch HTTP avec le token OAuth
-                const fileUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-                const response = await fetch(fileUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${window.accessToken}`
-                    }
-                });
-
-                if (response.status === 401) {
-                    // Jeton expiré ou révoqué : on l'oublie pour en redemander un au prochain clic
-                    window.accessToken = null;
-                    window.tokenExpiry = 0;
-                    alert('Votre session Google a expiré.\nCliquez à nouveau sur "Ouvrir depuis Google Drive" pour vous reconnecter.');
-                    return;
+// Liste les fichiers d'un dossier Drive (sous-dossiers compris, profondeur limitée)
+async function listDriveFolder(folderId, depth = 0) {
+    const results = [];
+    let pageToken = '';
+    do {
+        const params = new URLSearchParams({
+            q: `'${folderId}' in parents and trashed = false`,
+            fields: 'nextPageToken, files(id, name, mimeType)',
+            pageSize: '1000',
+            supportsAllDrives: 'true',
+            includeItemsFromAllDrives: 'true'
+        });
+        if (pageToken) params.set('pageToken', pageToken);
+        const response = await driveFetch(`https://www.googleapis.com/drive/v3/files?${params}`);
+        const data = await response.json();
+        for (const file of data.files || []) {
+            if (file.mimeType === FOLDER_MIME_TYPE) {
+                if (depth < 5) {
+                    results.push(...await listDriveFolder(file.id, depth + 1));
                 }
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const gpxContent = await response.text();
-                // On utilise window pour appeler loadGpxTrack qui était coincé dans DOMContentLoaded
-                // Ah, loadGpxTrack est dans DOMContentLoaded. Rendons-la globale !
-                if (typeof window.loadGpxTrackGlobal === 'function') {
-                    window.loadGpxTrackGlobal(gpxContent, fileName);
-                } else {
-                    console.error("loadGpxTrackGlobal n'est pas défini");
-                }
-
-            } catch (error) {
-                console.error('Erreur lors du téléchargement depuis Drive:', error);
-                alert(`Impossible de charger le fichier ${fileName} depuis Drive.\n(${error.message})`);
+            } else {
+                results.push(file);
             }
+        }
+        pageToken = data.nextPageToken || '';
+    } while (pageToken);
+    return results;
+}
+
+// Télécharge un fichier Drive et l'affiche selon son extension
+async function loadDriveFile(fileId, fileName) {
+    const response = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`);
+    const ext = window.getFileExtension(fileName);
+    if (ext === 'fit') {
+        window.loadFitTrackGlobal(await response.arrayBuffer(), fileName);
+    } else if (ext === 'trk') {
+        window.loadTrkTrackGlobal(await response.text(), fileName);
+    } else {
+        window.loadGpxTrackGlobal(await response.text(), fileName);
+    }
+}
+
+async function pickerCallback(data) {
+    if (data.action !== google.picker.Action.PICKED) return;
+    console.log('Éléments Drive sélectionnés :', data.docs);
+
+    const label = window.formatLabel();
+    const filesToLoad = [];
+    const ignored = [];
+
+    try {
+        for (const doc of data.docs) {
+            if (doc.mimeType === FOLDER_MIME_TYPE || doc.type === 'folder') {
+                // Dossier : on charge toutes les traces du type choisi qu'il contient
+                const content = await listDriveFolder(doc.id);
+                const matching = content.filter(f => window.matchesSelectedFormat(f.name));
+                if (matching.length === 0) {
+                    alert(`Aucun fichier ${label} trouvé dans le dossier Drive « ${doc.name} ».\n\nVérifiez le type de fichier sélectionné.`);
+                    continue;
+                }
+                if (matching.length > 20 && !confirm(`Le dossier « ${doc.name} » contient ${matching.length} fichiers ${label}.\nLes afficher tous ? (au-delà de 10 traces, la carte devient peu lisible)`)) {
+                    continue;
+                }
+                filesToLoad.push(...matching.map(f => ({ id: f.id, name: f.name })));
+            } else if (window.matchesSelectedFormat(doc.name)) {
+                filesToLoad.push({ id: doc.id, name: doc.name });
+            } else {
+                ignored.push(doc.name);
+            }
+        }
+    } catch (error) {
+        handleDriveError(error, 'la lecture du dossier');
+        return;
+    }
+
+    if (ignored.length > 0) {
+        alert(`${ignored.length} fichier(s) ignoré(s) car ils ne sont pas au format ${label} :\n${ignored.join('\n')}`);
+    }
+
+    for (const file of filesToLoad) {
+        try {
+            await loadDriveFile(file.id, file.name);
+        } catch (error) {
+            if (error instanceof DriveSessionExpiredError) {
+                handleDriveError(error);
+                return;
+            }
+            console.error('Erreur lors du téléchargement depuis Drive :', error);
+            alert(`Impossible de charger le fichier ${file.name} depuis Drive.\n(${error.message})`);
         }
     }
 }
-// Variables globales pour l'API Google hors de l'écouteur DOMContentLoaded
-window.tokenClient = null;
-window.accessToken = null;
-window.pickerInited = false;
-window.gisInited = false;
+
+function handleDriveError(error, context) {
+    if (error instanceof DriveSessionExpiredError) {
+        alert('Votre session Google a expiré.\nCliquez à nouveau sur "Ouvrir depuis Google Drive" pour vous reconnecter.');
+        return;
+    }
+    console.error(`Erreur Drive (${context}) :`, error);
+    alert(`Erreur Google Drive pendant ${context} :\n${error.message}`);
+}
 
 // Initialisation GSI (Appelé par accounts.google.com/gsi/client)
 window.gisLoaded = function () {
