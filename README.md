@@ -86,7 +86,6 @@ Pour des raisons de sécurité imposées par Google, chaque autorisation dure en
 ## Documentation
 
 *   [Guides/Guide_Adherent_GPX_Viewer.docx](Guides/Guide_Adherent_GPX_Viewer.docx) : guide complet pour les utilisateurs et adhérents (accès, connexion Google Drive, utilisation pas à pas et résolution des problèmes fréquents).
-*   [AIDE_MEMOIRE_DEPLOIEMENT.md](AIDE_MEMOIRE_DEPLOIEMENT.md) : pense-bête technique pour le déploiement et l'hébergement GitHub Pages.
 
 ---
 
