@@ -2,10 +2,24 @@
 
 **Version actuelle : 1.4.0** (novembre 2026) – voir l'[historique des versions](#historique-des-versions).
 
-Application web permettant d'afficher et de comparer des traces GPX sur une carte interactive, avec prise en charge d'un chargement de fichiers multiples.
+Application web permettant d'afficher et de comparer des traces **GPX, FIT et TRK** sur une carte interactive, avec chargement de plusieurs fichiers ou d'un dossier entier, depuis votre ordinateur ou votre Google Drive.
 
 👉 **Accès en ligne direct (recommandé) : [https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**  
 *(Rien à installer : fonctionne directement dans n'importe quel navigateur web moderne sur ordinateur, tablette ou smartphone, avec accès complet à Google Drive).*
+
+---
+
+## Nouveautés de la version 1.4.0
+
+*   **Trois formats de traces** : en plus du `.gpx`, l'application lit les fichiers `.fit` (Garmin, Wahoo…) et `.trk` (TwoNav, CompeGPS…). Chaque trace affiche un badge indiquant son format.
+*   **Choix du type de fichier** : un sélecteur en haut de la barre latérale (GPX par défaut, FIT, TRK ou Tous) filtre les fichiers proposés et chargés, en local comme sur Google Drive.
+*   **Ouverture d'un dossier local** : le bouton « Ouvrir un dossier local » affiche d'un coup toutes les traces du type choisi contenues dans un dossier (sous-dossiers compris).
+*   **Glisser-déposer** : déposez vos fichiers directement sur la page.
+*   **Nouvel explorateur Google Drive** intégré à l'application, qui remplace la fenêtre Google :
+    *   onglet **Tous mes parcours** : liste de vos traces avec une colonne **Dossier**, la date, une recherche et un tri par colonne ;
+    *   onglet **Mes dossiers** : uniquement les dossiers qui contiennent des traces, **par ordre alphabétique**, avec un bouton « Tout ouvrir » ;
+    *   sélecteur de type de fichier et bouton « Actualiser » directement dans la fenêtre.
+*   **Onglet « Importer » supprimé** : il servait à envoyer des fichiers vers Drive, ce qui n'est pas possible avec un accès en lecture seule (utilisez « Ouvrir fichier(s) local »).
 
 ---
 
@@ -24,9 +38,11 @@ Application web permettant d'afficher et de comparer des traces GPX sur une cart
 ## Fonctionnalités principales
 
 *   **Fonds de carte multiples** : Carte Randonnée Topo (OpenTopoMap par défaut), Plan routier (OpenStreetMap) et Vue Satellite (Esri World Imagery).
+*   **Formats GPX, FIT et TRK** : ouvrez vos traces quel que soit le GPS ou l'application qui les a produites, en choisissant le type de fichier voulu.
 *   **Comparaison de traces multiples** : Visualisez simultanément plusieurs traces avec une couleur distincte par parcours (jusqu'à 10 traces recommandées pour une lisibilité optimale).
 *   **Statistiques globales cumulées** : Calcul automatique de la distance totale et du dénivelé positif cumulé (D+) de l'ensemble des parcours affichés.
 *   **Profil altimétrique interactif** : Cliquez sur n'importe quelle trace sur la carte pour afficher sa courbe de dénivelé en bas de l'écran. En passant la souris sur le profil, un marqueur curseur se déplace en direct sur la trace géographique.
+*   **Sens du parcours** : des flèches directionnelles indiquent le sens d'avancement tout au long de chaque tracé.
 *   **Recentrage automatique** : La carte ajuste automatiquement son cadrage pour englober toutes vos traces actives.
 *   **Nettoyage rapide** : Supprimez une trace individuelle via sa corbeille ou utilisez « Tout effacer » pour réinitialiser la carte.
 
@@ -34,7 +50,7 @@ Application web permettant d'afficher et de comparer des traces GPX sur une cart
 
 ## Comment charger vos traces ?
 
-Deux modes de chargement sont à votre disposition :
+Choisissez d'abord le type de fichier, puis l'un des deux modes de chargement :
 
 ### 0. Choisir le type de fichier
 * En haut de la barre latérale, sélectionnez le format à ouvrir : **GPX** (par défaut), **FIT** (Garmin, Wahoo…), **TRK** (TwoNav, CompeGPS…) ou **Tous**. Seuls les fichiers de ce type sont proposés et chargés, en local comme sur Google Drive.
@@ -63,7 +79,7 @@ Deux modes de chargement sont à votre disposition :
 
 Pour des raisons de sécurité imposées par Google, chaque autorisation dure environ 1 heure :
 * **Renouvellement automatique** : Si votre session expire après une longue période d'inactivité, l'application redemande automatiquement un jeton au clic suivant, sans que vous ayez à recharger la page.
-* **Confidentialité totale** : L'application n'a accès qu'à la lecture des fichiers que vous sélectionnez vous-même dans la fenêtre Google Drive. Elle ne peut ni modifier ni supprimer vos données.
+* **Confidentialité totale** : L'accès à votre Drive est en **lecture seule**. L'application lit la liste de vos fichiers de traces et de vos dossiers (pour les afficher dans l'explorateur) et le contenu des traces que vous ouvrez, directement dans votre navigateur. Elle ne peut ni modifier ni supprimer vos données, et rien n'est envoyé à un autre serveur.
 
 ---
 
