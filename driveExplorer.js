@@ -199,7 +199,7 @@ function renderFilesTab(body, files) {
         <div class="drive-table-wrapper">
             <table class="drive-table">
                 <thead><tr>
-                    <th class="col-check"></th>
+                    <th class="col-check"><input type="checkbox" id="drive-check-all" title="Tout cocher / tout décocher (liste affichée)" ${sorted.length && sorted.every(f => explorerState.selected.has(f.id)) ? 'checked' : ''}></th>
                     ${sortHeader('name', 'Nom')}
                     ${sortHeader('folder', 'Dossier')}
                     ${sortHeader('date', 'Modifié le')}
@@ -209,13 +209,27 @@ function renderFilesTab(body, files) {
         </div>`;
 
     const search = document.getElementById('drive-search');
+    // Recherche : on attend une courte pause de frappe avant de redessiner la liste
     search.addEventListener('input', () => {
-        explorerState.search = search.value;
-        const pos = search.selectionStart;
-        renderExplorer();
-        const again = document.getElementById('drive-search');
-        again.focus();
-        again.setSelectionRange(pos, pos);
+        clearTimeout(explorerState.searchTimer);
+        explorerState.searchTimer = setTimeout(() => {
+            explorerState.search = search.value;
+            const pos = search.selectionStart;
+            renderExplorer();
+            const again = document.getElementById('drive-search');
+            again.focus();
+            again.setSelectionRange(pos, pos);
+        }, 200);
+    });
+    document.getElementById('drive-check-all').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const check = e.target.checked;
+        sorted.forEach(f => check ? explorerState.selected.add(f.id) : explorerState.selected.delete(f.id));
+        body.querySelectorAll('tr[data-id]').forEach(tr => {
+            tr.classList.toggle('selected', check);
+            tr.querySelector('input[type=checkbox]').checked = check;
+        });
+        updateFooter();
     });
     body.querySelectorAll('th.sortable').forEach(th => {
         th.addEventListener('click', () => {
@@ -225,7 +239,6 @@ function renderFilesTab(body, files) {
             renderExplorer();
         });
     });
-    bindRowSelection(body);
 }
 
 function renderFoldersTab(body, files) {
@@ -275,20 +288,31 @@ function renderFoldersTab(body, files) {
             loadDriveSelection(group.files);
         });
     });
-    bindRowSelection(body);
 }
 
+// Sélection par délégation (un seul écouteur pour toute la liste).
+// Maj + clic sélectionne toute la plage depuis le dernier clic.
+// (attaché une seule fois au conteneur, qui est conservé d'un affichage à l'autre)
 function bindRowSelection(body) {
-    body.querySelectorAll('tr[data-id]').forEach(tr => {
-        tr.addEventListener('click', (e) => {
-            const id = tr.dataset.id;
-            if (explorerState.selected.has(id)) explorerState.selected.delete(id);
-            else explorerState.selected.add(id);
-            tr.classList.toggle('selected');
-            const cb = tr.querySelector('input[type=checkbox]');
-            if (e.target !== cb) cb.checked = explorerState.selected.has(id);
-            updateFooter();
-        });
+    let lastIndex = null;
+    body.addEventListener('click', (e) => {
+        const tr = e.target.closest('tr[data-id]');
+        if (!tr || !body.contains(tr)) return;
+        const rows = Array.from(tr.parentElement.querySelectorAll('tr[data-id]'));
+        const index = rows.indexOf(tr);
+        const select = !explorerState.selected.has(tr.dataset.id);
+        const range = (e.shiftKey && lastIndex !== null && lastIndex < rows.length)
+            ? rows.slice(Math.min(lastIndex, index), Math.max(lastIndex, index) + 1)
+            : [tr];
+        for (const row of range) {
+            const id = row.dataset.id;
+            if (select) explorerState.selected.add(id); else explorerState.selected.delete(id);
+            row.classList.toggle('selected', select);
+            row.querySelector('input[type=checkbox]').checked = select;
+        }
+        if (e.shiftKey) window.getSelection().removeAllRanges();
+        lastIndex = index;
+        updateFooter();
     });
 }
 
@@ -346,6 +370,7 @@ async function loadDriveSelection(files) {
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('drive-explorer');
     if (!modal) return;
+    bindRowSelection(document.getElementById('drive-explorer-body'));
     document.getElementById('drive-explorer-close').addEventListener('click', closeDriveExplorer);
     document.getElementById('drive-explorer-cancel').addEventListener('click', closeDriveExplorer);
     document.getElementById('drive-explorer-refresh').addEventListener('click', refreshDriveInventory);
@@ -361,6 +386,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('drive-explorer-open').addEventListener('click', () => {
         const chosen = driveInventory.files.filter(f => explorerState.selected.has(f.id));
+        if (chosen.length > 20 && !confirm(`Afficher ${chosen.length} parcours ?\n(au-delà de 10 traces, la carte devient peu lisible)`)) {
+            return;
+        }
         closeDriveExplorer();
         loadDriveSelection(chosen);
     });

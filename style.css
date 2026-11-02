@@ -779,3 +779,12 @@ path.leaflet-interactive {
 
 .drive-folder .drive-table .col-name { width: auto; }
 .drive-folder .drive-table .col-check { padding-left: 2.6rem; width: 4.5rem; }
+
+/* L'effet de flou derrière l'explorateur Drive rendait chaque clic très lent sur les longues listes */
+#drive-explorer {
+    backdrop-filter: none;
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+.drive-table-wrapper { contain: content; }
+.drive-table tr[data-id] { user-select: none; }
