@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nameDiv.className = 'track-name';
             const badgeClass = track.format ? `badge-${track.format.toLowerCase()}` : 'badge-gpx';
             const formatText = track.format || 'GPX';
-            nameDiv.innerHTML = `<span class="track-color-indicator" style="background-color: ${track.color};"></span>${track.name}<span class="track-format-badge ${badgeClass}">${formatText}</span>`;
+            nameDiv.innerHTML = `<span class="track-color-indicator" style="background-color: ${track.color};"></span>${escapeHtml(track.name)}<span class="track-format-badge ${badgeClass}">${formatText}</span>`;
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-delete';
@@ -734,16 +734,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Configuration de l'API Google ---
 // Ces constantes doivent être accessibles globalement pour les scripts GSI et GAPI
 const CLIENT_ID = '129413603825-hhavjkceh88vfou7q3okoffhn460u0id.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyCSzh2bC6BleQeaWcqFbJQtBqyzi8H3YKE';
-const APP_ID = '129413603825';
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
 // Variables globales pour l'API Google hors de l'écouteur DOMContentLoaded
 window.tokenClient = null;
 window.accessToken = null;
 window.tokenExpiry = 0; // Horodatage (ms) d'expiration du jeton d'accès
-window.pickerInited = false;
+window.pickerInited = true; // plus de dépendance au Google Picker (explorateur Drive intégré)
 window.gisInited = false;
+
+// Échappe le texte avant insertion HTML (noms de fichiers)
+function escapeHtml(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 // Le jeton est-il encore utilisable ? (marge de sécurité de 60 s)
 function isTokenValid() {
@@ -820,12 +825,12 @@ function setupDriveButton() {
             // Le jeton expire (≈ 1 h) : on mémorise l'échéance avec 60 s de marge
             const expiresIn = Number(resp.expires_in) || 3600;
             window.tokenExpiry = Date.now() + (expiresIn - 60) * 1000;
-            createPicker();
+            openDriveExplorer();
         };
 
         if (isTokenValid()) {
             // Jeton encore valide : on ouvre le picker directement
-            createPicker();
+            openDriveExplorer();
         } else if (!window.hasConsented) {
             // Première demande dans cette session : écran de consentement complet
             window.tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -839,54 +844,6 @@ function setupDriveButton() {
 
 // On l'appelle aussi au cas où le DOMContentLoaded se déclenche APRES gapi
 document.addEventListener('DOMContentLoaded', setupDriveButton);
-
-// Types MIME que Google Drive attribue habituellement aux fichiers GPX, FIT et TRK
-// (le filtrage final se fait sur l'extension du nom de fichier, selon le type choisi)
-const TRACK_MIME_TYPES = [
-    'application/gpx+xml', 'application/gpx', 'application/xml', 'text/xml',
-    'application/vnd.ant.fit', 'application/fit', 'application/x-fit',
-    'application/x-trk', 'application/octet-stream', 'text/plain'
-].join(',');
-const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
-
-function createPicker() {
-    const label = window.formatLabel ? window.formatLabel() : 'GPX';
-
-    // Onglet 1 : "Tous mes parcours" (vue plate de tous les fichiers, sans dossiers)
-    const allFilesView = new google.picker.DocsView(google.picker.ViewId.DOCS);
-    allFilesView.setLabel(`Tous mes parcours (${label})`);
-    allFilesView.setIncludeFolders(false);
-    allFilesView.setMimeTypes(TRACK_MIME_TYPES);
-
-    // Onglet 2 : "Parcourir mes dossiers" (arborescence, sélection de fichiers)
-    const foldersView = new google.picker.DocsView(google.picker.ViewId.DOCS);
-    foldersView.setLabel('Parcourir mes dossiers');
-    foldersView.setIncludeFolders(true);
-    foldersView.setMimeTypes(TRACK_MIME_TYPES + ',' + FOLDER_MIME_TYPE);
-
-    // Onglet 3 : "Choisir un dossier" (toutes les traces du dossier choisi seront chargées)
-    const pickFolderView = new google.picker.DocsView(google.picker.ViewId.FOLDERS);
-    pickFolderView.setLabel('Choisir un dossier');
-    pickFolderView.setIncludeFolders(true);
-    pickFolderView.setSelectFolderEnabled(true);
-    pickFolderView.setMimeTypes(FOLDER_MIME_TYPE);
-
-    const picker = new google.picker.PickerBuilder()
-        .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
-        .setDeveloperKey(API_KEY)
-        .setAppId(APP_ID)
-        .setOAuthToken(window.accessToken)
-        .setLocale('fr')
-        .setTitle(`Sélectionnez des fichiers ${label} ou un dossier`)
-        .addView(allFilesView)
-        .addView(foldersView)
-        .addView(pickFolderView)
-        .addView(new google.picker.DocsUploadView())
-        .setCallback(pickerCallback)
-        .setSize(900, 600)
-        .build();
-    picker.setVisible(true);
-}
 
 // Erreur dédiée pour interrompre proprement le chargement si le jeton a expiré
 class DriveSessionExpiredError extends Error {}
@@ -905,35 +862,6 @@ async function driveFetch(url) {
     return response;
 }
 
-// Liste les fichiers d'un dossier Drive (sous-dossiers compris, profondeur limitée)
-async function listDriveFolder(folderId, depth = 0) {
-    const results = [];
-    let pageToken = '';
-    do {
-        const params = new URLSearchParams({
-            q: `'${folderId}' in parents and trashed = false`,
-            fields: 'nextPageToken, files(id, name, mimeType)',
-            pageSize: '1000',
-            supportsAllDrives: 'true',
-            includeItemsFromAllDrives: 'true'
-        });
-        if (pageToken) params.set('pageToken', pageToken);
-        const response = await driveFetch(`https://www.googleapis.com/drive/v3/files?${params}`);
-        const data = await response.json();
-        for (const file of data.files || []) {
-            if (file.mimeType === FOLDER_MIME_TYPE) {
-                if (depth < 5) {
-                    results.push(...await listDriveFolder(file.id, depth + 1));
-                }
-            } else {
-                results.push(file);
-            }
-        }
-        pageToken = data.nextPageToken || '';
-    } while (pageToken);
-    return results;
-}
-
 // Télécharge un fichier Drive et l'affiche selon son extension
 async function loadDriveFile(fileId, fileName) {
     const response = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`);
@@ -944,57 +872,6 @@ async function loadDriveFile(fileId, fileName) {
         window.loadTrkTrackGlobal(await response.text(), fileName);
     } else {
         window.loadGpxTrackGlobal(await response.text(), fileName);
-    }
-}
-
-async function pickerCallback(data) {
-    if (data.action !== google.picker.Action.PICKED) return;
-    console.log('Éléments Drive sélectionnés :', data.docs);
-
-    const label = window.formatLabel();
-    const filesToLoad = [];
-    const ignored = [];
-
-    try {
-        for (const doc of data.docs) {
-            if (doc.mimeType === FOLDER_MIME_TYPE || doc.type === 'folder') {
-                // Dossier : on charge toutes les traces du type choisi qu'il contient
-                const content = await listDriveFolder(doc.id);
-                const matching = content.filter(f => window.matchesSelectedFormat(f.name));
-                if (matching.length === 0) {
-                    alert(`Aucun fichier ${label} trouvé dans le dossier Drive « ${doc.name} ».\n\nVérifiez le type de fichier sélectionné.`);
-                    continue;
-                }
-                if (matching.length > 20 && !confirm(`Le dossier « ${doc.name} » contient ${matching.length} fichiers ${label}.\nLes afficher tous ? (au-delà de 10 traces, la carte devient peu lisible)`)) {
-                    continue;
-                }
-                filesToLoad.push(...matching.map(f => ({ id: f.id, name: f.name })));
-            } else if (window.matchesSelectedFormat(doc.name)) {
-                filesToLoad.push({ id: doc.id, name: doc.name });
-            } else {
-                ignored.push(doc.name);
-            }
-        }
-    } catch (error) {
-        handleDriveError(error, 'la lecture du dossier');
-        return;
-    }
-
-    if (ignored.length > 0) {
-        alert(`${ignored.length} fichier(s) ignoré(s) car ils ne sont pas au format ${label} :\n${ignored.join('\n')}`);
-    }
-
-    for (const file of filesToLoad) {
-        try {
-            await loadDriveFile(file.id, file.name);
-        } catch (error) {
-            if (error instanceof DriveSessionExpiredError) {
-                handleDriveError(error);
-                return;
-            }
-            console.error('Erreur lors du téléchargement depuis Drive :', error);
-            alert(`Impossible de charger le fichier ${file.name} depuis Drive.\n(${error.message})`);
-        }
     }
 }
 
@@ -1032,20 +909,3 @@ window.gisLoaded = function () {
     const driveBtn = document.getElementById('btn-google-drive');
     if (driveBtn && window.pickerInited) driveBtn.disabled = false;
 };
-
-// Initialisation gapi (Appelé par apis.google.com/js/api.js)
-window.gapiLoaded = function () {
-    gapi.load('client:picker', initializeGapiClient);
-};
-
-async function initializeGapiClient() {
-    console.log("GAPI Client chargé");
-    await gapi.client.init({
-        apiKey: API_KEY, // Utilise la constante globale au lieu de la chaîne en dur
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-    });
-    window.pickerInited = true;
-
-    const driveBtn = document.getElementById('btn-google-drive');
-    if (driveBtn && window.gisInited) driveBtn.disabled = false;
-}

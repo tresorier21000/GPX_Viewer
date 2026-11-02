@@ -31,6 +31,7 @@ Source: "index.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "style.css"; DestDir: "{app}"; Flags: ignoreversion
 Source: "app.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "trackParsers.js"; DestDir: "{app}"; Flags: ignoreversion
+Source: "driveExplorer.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "leaflet.polylineDecorator.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "favicon.png"; DestDir: "{app}"; Flags: ignoreversion
