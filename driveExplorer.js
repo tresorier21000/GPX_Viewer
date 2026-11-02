@@ -14,6 +14,8 @@ const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
 // Au-delà, la case « tout cocher » est désactivée (on ne veut pas afficher des centaines de traces)
 const CHECK_ALL_MAX = 20;
+// Nombre de lignes affichées à la fois : une liste de près de 1000 lignes ralentit chaque clic
+const PAGE_SIZE = 100;
 const collatorFr = new Intl.Collator('fr', { sensitivity: 'base', numeric: true });
 
 // Inventaire mis en cache pour la session (recalculé avec le bouton « Actualiser »)
@@ -42,7 +44,8 @@ const explorerState = {
     sortKey: 'name',       // 'name' | 'folder' | 'date'
     sortAsc: true,
     selected: new Set(),   // ids des fichiers cochés
-    openFolderId: null     // dossier affiché dans l'onglet « Mes dossiers »
+    openFolderId: null,    // dossier affiché dans l'onglet « Mes dossiers »
+    limit: PAGE_SIZE       // nombre de lignes affichées dans « Tous mes parcours »
 };
 
 // Parcourt toutes les pages d'une requête files.list
@@ -224,8 +227,9 @@ function renderFilesTab(body, files) {
                     ${sortHeader('folder', 'Dossier')}
                     ${sortHeader('date', 'Modifié le')}
                 </tr></thead>
-                <tbody>${fileRowsHtml(sorted, true)}</tbody>
+                <tbody>${fileRowsHtml(sorted.slice(0, explorerState.limit), true)}</tbody>
             </table>
+            ${sorted.length > explorerState.limit ? `<button id="drive-more" class="btn-link drive-more">Afficher ${Math.min(PAGE_SIZE, sorted.length - explorerState.limit)} parcours de plus (${sorted.length - explorerState.limit} restants) — ou affinez la recherche</button>` : ''}
         </div>`;
 
     const search = document.getElementById('drive-search');
@@ -234,12 +238,22 @@ function renderFilesTab(body, files) {
         clearTimeout(explorerState.searchTimer);
         explorerState.searchTimer = setTimeout(() => {
             explorerState.search = search.value;
+            explorerState.limit = PAGE_SIZE;
             const pos = search.selectionStart;
             renderExplorer();
             const again = document.getElementById('drive-search');
             again.focus();
             again.setSelectionRange(pos, pos);
         }, 200);
+    });
+    const more = document.getElementById('drive-more');
+    if (more) more.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wrapper = body.querySelector('.drive-table-wrapper');
+        const scroll = wrapper.scrollTop;
+        explorerState.limit += PAGE_SIZE;
+        renderExplorer();
+        body.querySelector('.drive-table-wrapper').scrollTop = scroll;
     });
     document.getElementById('drive-check-all').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -254,6 +268,7 @@ function renderFilesTab(body, files) {
     body.querySelectorAll('th.sortable').forEach(th => {
         th.addEventListener('click', () => {
             const key = th.dataset.sort;
+            explorerState.limit = PAGE_SIZE;
             if (explorerState.sortKey === key) explorerState.sortAsc = !explorerState.sortAsc;
             else { explorerState.sortKey = key; explorerState.sortAsc = key !== 'date'; }
             renderExplorer();
@@ -349,6 +364,7 @@ async function openDriveExplorer() {
     const modal = document.getElementById('drive-explorer');
     explorerState.mode = 'drive';
     explorerState.search = '';
+    explorerState.limit = PAGE_SIZE;
     explorerState.selected.clear();
     modal.style.display = 'flex';
     renderExplorer();
@@ -379,6 +395,7 @@ function openLocalFolderExplorer(fileList, rootName) {
     explorerState.mode = 'local';
     explorerState.tab = 'files';
     explorerState.search = '';
+    explorerState.limit = PAGE_SIZE;
     explorerState.openFolderId = null;
     explorerState.selected.clear();
     // Petit dossier : tout est pré-coché, il suffit de cliquer sur « Afficher la sélection »
