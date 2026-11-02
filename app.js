@@ -187,16 +187,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 showElevationProfile(elevationData, flatLatLngs, fileName.replace('.gpx', ''), trackColor, trackId);
             });
 
-            // --- Flèches Directionnelles ---
-            // (Désactivées car incompatibles avec les objets multi-lignes issus de certains GPX, provoquant un crash JS)
+            // --- Fleches Directionnelles ---
+            let arrowDecorator = null;
+            if (flatLatLngs && flatLatLngs.length > 1 && typeof L.polylineDecorator === 'function') {
+                try {
+                    arrowDecorator = L.polylineDecorator(flatLatLngs, {
+                        patterns: [
+                            {
+                                offset: '25px',
+                                repeat: '75px',
+                                symbol: L.Symbol.arrowHead({
+                                    pixelSize: 10,
+                                    polygon: false,
+                                    pathOptions: {
+                                        stroke: true,
+                                        color: trackColor,
+                                        weight: 2,
+                                        opacity: 0.85
+                                    }
+                                })
+                            }
+                        ]
+                    }).addTo(map);
+                } catch (err) {
+                    console.warn("Impossible d'ajouter les fleches sur la trace :", err);
+                }
+            }
 
-            // Centrer la carte sur la trace courante (en attendant les éventuelles autres)
+            // Centrer la carte sur la trace courante (en attendant les eventuelles autres)
             map.fitBounds(e.target.getBounds());
 
             const trackData = {
                 id: trackId,
                 name: fileName.replace('.gpx', ''),
                 gpxLayer: gpxLayer,
+                arrowDecorator: arrowDecorator,
                 distance: distance,
                 elevationGain: elevationGain,
                 color: trackColor
@@ -305,6 +330,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Retirer de la carte
             map.removeLayer(track.gpxLayer);
+            if (track.arrowDecorator && map.hasLayer(track.arrowDecorator)) {
+                map.removeLayer(track.arrowDecorator);
+            }
             // Retirer du tableau d'état
             appState.tracks.splice(trackIndex, 1);
             // Mettre à jour l'UI
@@ -333,6 +361,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Retirer toutes les couches de la carte
         appState.tracks.forEach(track => {
             map.removeLayer(track.gpxLayer);
+            if (track.arrowDecorator && map.hasLayer(track.arrowDecorator)) {
+                map.removeLayer(track.arrowDecorator);
+            }
         });
 
         // Vider l'état
