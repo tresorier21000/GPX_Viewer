@@ -46,6 +46,10 @@ Deux modes de chargement sont à votre disposition :
 
 ### 2. Depuis Google Drive (Accès sur autorisation, en ligne)
 * Cliquez sur **« Ouvrir depuis Google Drive »** pour sélectionner vos traces stockées sur votre espace Cloud personnel.
+* Une fenêtre intégrée à l'application s'ouvre avec deux onglets :
+  * **Tous mes parcours** : la liste de vos traces avec leur **dossier** et leur date, une recherche et un tri par colonne. Cochez les traces voulues puis cliquez sur « Afficher la sélection ».
+  * **Mes dossiers** : uniquement les dossiers qui contiennent des traces du type choisi, **par ordre alphabétique**. Cliquez sur un dossier pour voir son contenu, ou sur « Tout ouvrir » pour afficher toutes ses traces.
+* Le bouton « Actualiser » relit votre Drive si vous venez d'y ajouter des fichiers.
 * **Disponible sur la version en ligne** ([https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)).
 * **Demande d'autorisation préalable (Phase de test) :**  
   L'application étant actuellement en phase de test de sécurité auprès de Google, l'accès à Google Drive est réservé aux personnes déclarées dans la liste des **utilisateurs tests**.
@@ -74,7 +78,7 @@ Pour des raisons de sécurité imposées par Google, chaque autorisation dure en
 
 | Version | Date | Changements |
 |---|---|---|
-| **1.4.0** | Novembre 2026 | Prise en charge des formats `.fit` (Garmin, Wahoo) et `.trk` (TwoNav, CompeGPS) ; choix du type de fichier à ouvrir (GPX par défaut, FIT, TRK ou Tous) ; ouverture d'un dossier complet en local et sur Google Drive (onglet « Choisir un dossier ») ; glisser-déposer ; correction du téléchargement des fichiers FIT depuis Drive ; génération de l'installateur `Setup_GPX_Viewer_v1.4.0.exe`. |
+| **1.4.0** | Novembre 2026 | Prise en charge des formats `.fit` (Garmin, Wahoo) et `.trk` (TwoNav, CompeGPS) ; choix du type de fichier à ouvrir (GPX par défaut, FIT, TRK ou Tous) ; ouverture d'un dossier local complet ; glisser-déposer ; nouvel explorateur Google Drive intégré (remplace la fenêtre Google Picker) : colonne « Dossier », recherche, tri, dossiers contenant des traces seulement et par ordre alphabétique, bouton « Tout ouvrir » ; suppression de l'onglet « Importer » (non fonctionnel en lecture seule) ; génération de l'installateur `Setup_GPX_Viewer_v1.4.0.exe`. |
 | 1.3.1 | Novembre 2026 | Ajout des flèches directionnelles sur les traces affichées avec le plug-in Leaflet PolylineDecorator ; génération de l'installateur Windows `Setup_GPX_Viewer_v1.3.1.exe`. |
 | **1.3.0** | Novembre 2026 | Détection automatique du protocole local `file://` avec proposition de bascule en un clic vers la version en ligne pour Google Drive ; ajout d'un raccourci web dans le menu Démarrer de l'installateur Windows (`setup.iss`) ; clarification dans la documentation. |
 | **1.2.0** | Octobre 2026 | Fermeture et nettoyage automatique du profil altimétrique lors de la suppression d'une trace ou lors du clic sur « Tout effacer » ; ajout du script Inno Setup (`setup.iss`) et génération de l'installateur Windows `Setup_GPX_Viewer_v1.2.0.exe` ; sécurisation de la clé API Google (référents HTTP et restrictions d'API). |

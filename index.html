@@ -10,7 +10,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -145,7 +145,7 @@
                 <ul>
                     <li><strong>Formats supportés :</strong> Fichiers <code>.gpx</code> (standard), <code>.fit</code> (Garmin, Wahoo...) et <code>.trk</code> (TwoNav, CompeGPS...).</li>
                     <li><strong>Type de fichier :</strong> Choisissez d'abord le format à ouvrir (<em>GPX</em> par défaut, <em>FIT</em>, <em>TRK</em> ou <em>Tous</em>). Seuls les fichiers de ce type sont proposés et chargés.</li>
-                    <li><strong>Ajouter des traces :</strong> "Ouvrir fichier(s) local" charge un ou plusieurs fichiers ; "Ouvrir un dossier local" affiche d'un coup toutes les traces du dossier choisi (sous-dossiers compris). Avec "Google Drive", sélectionnez des fichiers (onglets <em>Tous mes parcours</em> ou <em>Parcourir mes dossiers</em>) ou un dossier entier (onglet <em>Choisir un dossier</em>).</li>
+                    <li><strong>Ajouter des traces :</strong> "Ouvrir fichier(s) local" charge un ou plusieurs fichiers ; "Ouvrir un dossier local" affiche d'un coup toutes les traces du dossier choisi (sous-dossiers compris). Avec "Google Drive", l'onglet <em>Tous mes parcours</em> liste vos traces avec leur dossier (recherche et tri par colonne) ; l'onglet <em>Mes dossiers</em> ne montre que les dossiers qui contiennent des traces, par ordre alphabétique, avec un bouton <em>Tout ouvrir</em>.</li>
                     <li><strong>Sens du parcours :</strong> Des flèches directionnelles indiquent automatiquement le sens d'avancement tout au long du tracé.</li>
                     <li><strong>Interagir :</strong> Cliquez sur une ligne tracée sur la carte pour faire apparaître son <strong>profil altimétrique</strong>. Passez la souris sur la courbe du graphique pour voir un curseur se déplacer en direct sur la trace géographique.</li>
                     <li><strong>Couches de carte :</strong> En haut à droite de la carte, survolez l'icône des calques pour passer en vue Satellite ou Carte Randonnée (Topo).</li>
@@ -153,6 +153,36 @@
                     <li><strong>Nettoyer :</strong> Supprimez une trace individuelle via sa corbeille ou utilisez "Tout effacer" pour réinitialiser la carte.</li>
                 </ul>
                 <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);"><em>Astuce : Ne chargez pas plus de 10 traces simultanément pour conserver une lisibilité optimale des couleurs et des graphiques.</em></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Explorateur Google Drive (caché par défaut) -->
+    <div id="drive-explorer" class="modal-overlay" style="display: none;">
+        <div class="modal-content drive-explorer-content" role="dialog" aria-labelledby="drive-explorer-title">
+            <div class="modal-header">
+                <h2 id="drive-explorer-title">Google Drive : fichiers <span id="drive-explorer-format">GPX</span></h2>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <button id="drive-explorer-refresh" class="btn-link" title="Relire le contenu de votre Drive">↻ Actualiser</button>
+                    <button id="drive-explorer-close" class="btn-close-modal" title="Fermer">&times;</button>
+                </div>
+            </div>
+            <div class="drive-tabs">
+                <button class="drive-tab active" data-tab="files">Tous mes parcours</button>
+                <button class="drive-tab" data-tab="folders">Mes dossiers</button>
+                <label class="drive-format-picker">Type :
+                    <select id="drive-format">
+                        <option value="gpx">GPX</option>
+                        <option value="fit">FIT</option>
+                        <option value="trk">TRK</option>
+                        <option value="all">Tous</option>
+                    </select>
+                </label>
+            </div>
+            <div id="drive-explorer-body" class="drive-explorer-body"></div>
+            <div class="drive-explorer-footer">
+                <button id="drive-explorer-cancel" class="btn btn-secondary">Annuler</button>
+                <button id="drive-explorer-open" class="btn btn-primary" disabled>Afficher la sélection</button>
             </div>
         </div>
     </div>
@@ -169,11 +199,12 @@
     <script src="trackParsers.js?v=2"></script>
     <!-- Chart.js pour le profil altimétrique -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Google API pour Drive -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <!-- Google Identity Services (connexion Google Drive) -->
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <!-- Custom App Script -->
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=18"></script>
+    <!-- Explorateur Google Drive intégré -->
+    <script src="driveExplorer.js?v=1"></script>
 </body>
 
 </html>
