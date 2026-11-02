@@ -63,7 +63,7 @@ Choisissez d'abord le type de fichier, puis l'un des deux modes de chargement :
 ### 2. Depuis Google Drive (Accès sur autorisation, en ligne)
 * Cliquez sur **« Ouvrir depuis Google Drive »** pour sélectionner vos traces stockées sur votre espace Cloud personnel.
 * Une fenêtre intégrée à l'application s'ouvre avec deux onglets :
-  * **Tous mes parcours** : la liste de vos traces avec leur **dossier** et leur date, une recherche et un tri par colonne. Cochez les traces voulues (**Maj + clic** pour cocher toute une plage, case en haut de colonne pour tout cocher) puis cliquez sur « Afficher la sélection ».
+  * **Tous mes parcours** : la liste de vos traces avec leur **dossier** et leur date, une recherche et un tri par colonne. Cochez les traces voulues (**Maj + clic** pour cocher toute une plage, case en haut de colonne pour tout cocher quand la liste affichée compte 20 parcours au plus) puis cliquez sur « Afficher la sélection ».
   * **Mes dossiers** : uniquement les dossiers qui contiennent des traces du type choisi, **par ordre alphabétique**. Cliquez sur un dossier pour voir son contenu, ou sur « Tout ouvrir » pour afficher toutes ses traces.
 * Le bouton « Actualiser » relit votre Drive si vous venez d'y ajouter des fichiers.
 * **Disponible sur la version en ligne** ([https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)).

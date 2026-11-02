@@ -12,6 +12,8 @@
 
 const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
+// Au-delà, la case « tout cocher » est désactivée (on ne veut pas afficher des centaines de traces)
+const CHECK_ALL_MAX = 20;
 const collatorFr = new Intl.Collator('fr', { sensitivity: 'base', numeric: true });
 
 // Inventaire mis en cache pour la session (recalculé avec le bouton « Actualiser »)
@@ -199,7 +201,9 @@ function renderFilesTab(body, files) {
         <div class="drive-table-wrapper">
             <table class="drive-table">
                 <thead><tr>
-                    <th class="col-check"><input type="checkbox" id="drive-check-all" title="Tout cocher / tout décocher (liste affichée)" ${sorted.length && sorted.every(f => explorerState.selected.has(f.id)) ? 'checked' : ''}></th>
+                    <th class="col-check"><input type="checkbox" id="drive-check-all" ${sorted.length > CHECK_ALL_MAX
+                        ? `disabled title="Tout cocher n'est possible que pour ${CHECK_ALL_MAX} parcours au plus : affinez d'abord la recherche"`
+                        : `title="Tout cocher / tout décocher (liste affichée)"`} ${sorted.length && sorted.length <= CHECK_ALL_MAX && sorted.every(f => explorerState.selected.has(f.id)) ? 'checked' : ''}></th>
                     ${sortHeader('name', 'Nom')}
                     ${sortHeader('folder', 'Dossier')}
                     ${sortHeader('date', 'Modifié le')}
