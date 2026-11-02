@@ -30,6 +30,7 @@ Name: "desktopicon"; Description: "Créer une icône sur le Bureau"; GroupDescri
 Source: "index.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "style.css"; DestDir: "{app}"; Flags: ignoreversion
 Source: "app.js"; DestDir: "{app}"; Flags: ignoreversion
+Source: "leaflet.polylineDecorator.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "favicon.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
