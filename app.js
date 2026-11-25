@@ -44,9 +44,64 @@ document.addEventListener('DOMContentLoaded', () => {
     const localFileBtn = document.getElementById('btn-local-file');
     const fileInput = document.getElementById('gpx-file-input');
 
+    const folderBtn = document.getElementById('btn-local-folder');
+    const folderInput = document.getElementById('folder-input');
+
+    // Type de fichier choisi (GPX par défaut) : filtre l'ouverture locale et Google Drive
+    window.getSelectedFormat = function () {
+        const checked = document.querySelector('input[name="track-format"]:checked');
+        return checked ? checked.value : 'gpx';
+    };
+    window.SUPPORTED_EXTENSIONS = ['gpx', 'fit', 'trk'];
+    window.getFileExtension = function (fileName) {
+        const parts = (fileName || '').split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    };
+    // Le fichier correspond-il au type choisi ?
+    window.matchesSelectedFormat = function (fileName) {
+        const ext = window.getFileExtension(fileName);
+        const format = window.getSelectedFormat();
+        return format === 'all' ? window.SUPPORTED_EXTENSIONS.includes(ext) : ext === format;
+    };
+    window.formatLabel = function () {
+        const format = window.getSelectedFormat();
+        return format === 'all' ? 'GPX, FIT ou TRK' : format.toUpperCase();
+    };
+
+    function updateAcceptAttribute() {
+        const format = window.getSelectedFormat();
+        fileInput.accept = format === 'all' ? '.gpx,.fit,.trk' : '.' + format;
+    }
+    document.querySelectorAll('input[name="track-format"]').forEach(radio => {
+        radio.addEventListener('change', updateAcceptAttribute);
+    });
+    updateAcceptAttribute();
+
     localFileBtn.addEventListener('click', () => {
+        updateAcceptAttribute();
         fileInput.click();
     });
+
+    if (folderBtn && folderInput) {
+        folderBtn.addEventListener('click', () => folderInput.click());
+        folderInput.addEventListener('change', (e) => {
+            const allFiles = Array.from(e.target.files);
+            folderInput.value = '';
+            if (allFiles.length === 0) {
+                // Cas typique : dossier vide, ou dossier Google Drive pour ordinateur (G:) dont les
+                // fichiers ne sont pas disponibles hors connexion : le navigateur n'en voit aucun.
+                alert("Le navigateur n'a trouvé aucun fichier dans ce dossier.\n\n" +
+                    "S'il s'agit d'un dossier Google Drive sur votre ordinateur (lecteur G:), rendez-le d'abord " +
+                    "« disponible hors connexion » (clic droit), ou utilisez le bouton « Ouvrir depuis Google Drive ».");
+                return;
+            }
+            console.log(`Dossier : ${allFiles.length} fichier(s) trouvé(s)`);
+            // Nom du dossier choisi (premier élément du chemin relatif)
+            const folderName = (allFiles[0].webkitRelativePath || '').split('/')[0] || 'dossier';
+            // Affiche le contenu du dossier pour choisir les traces (filtrées selon le type choisi)
+            window.openLocalFolderExplorer(allFiles, folderName);
+        });
+    }
 
     // État global de l'application
     const appState = {
@@ -137,63 +192,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    fileInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 0) {
-            console.log(`${files.length} fichier(s) sélectionné(s)`);
-            let ignoredCount = 0;
-            const ignoredNames = [];
-            let processedCount = 0;
-
-            files.forEach(file => {
-                const ext = file.name.split('.').pop().toLowerCase();
-                const reader = new FileReader();
-                if (ext === 'fit') {
-                    reader.onload = (event) => {
-                        loadFitTrack(event.target.result, file.name);
-                    };
-                    reader.readAsArrayBuffer(file);
-                } else if (ext === 'trk') {
-                    reader.onload = (event) => {
-                        loadTrkTrack(event.target.result, file.name);
-                    };
-                    reader.readAsText(file);
-                } else if (ext === 'gpx') {
-                    // Extension GPX explicite
-                    reader.onload = (event) => {
-                        loadGpxTrack(event.target.result, file.name);
-                    };
-                    reader.readAsText(file);
-                } else {
-                    // Extension inconnue : lire le début du fichier pour détecter un GPX par son contenu XML
-                    reader.onload = (event) => {
-                        const content = event.target.result;
-                        if (content && (content.includes('<gpx') || content.includes('<GPX'))) {
-                            console.log(`Fichier "${file.name}" détecté comme GPX par son contenu.`);
-                            loadGpxTrack(content, file.name);
-                        } else {
-                            ignoredCount++;
-                            ignoredNames.push(file.name);
-                            console.warn(`Fichier ignoré (format non reconnu) : ${file.name}`);
-                            processedCount++;
-                            if (processedCount === files.length && ignoredCount > 0) {
-                                alert(`${ignoredCount} fichier(s) ignoré(s) (format non reconnu) :\n${ignoredNames.join('\n')}\n\nFormats acceptés : .gpx, .fit, .trk`);
-                            }
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            });
-            // Réinitialiser l'input pour permettre de re-sélectionner le même fichier si besoin
-            fileInput.value = '';
+    // Lecture d'un fichier local selon son extension
+    function readLocalFile(file) {
+        const ext = window.getFileExtension(file.name);
+        const reader = new FileReader();
+        reader.onerror = () => alert(`Impossible de lire le fichier "${file.name}".`);
+        if (ext === 'fit') {
+            reader.onload = (event) => loadFitTrack(event.target.result, file.name);
+            reader.readAsArrayBuffer(file);
+        } else if (ext === 'trk') {
+            reader.onload = (event) => loadTrkTrack(event.target.result, file.name);
+            reader.readAsText(file);
+        } else {
+            // GPX par défaut
+            reader.onload = (event) => loadGpxTrack(event.target.result, file.name);
+            reader.readAsText(file);
         }
+    }
+
+    // Glisser-déposer des fichiers sur la page (même filtrage par type)
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const allFiles = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+        if (allFiles.length === 0) return;
+        const files = allFiles.filter(f => window.matchesSelectedFormat(f.name));
+        if (files.length < allFiles.length) {
+            alert(`${allFiles.length - files.length} fichier(s) ignoré(s) : ils ne sont pas au format ${window.formatLabel()}.`);
+        }
+        files.forEach(readLocalFile);
+    });
+
+    window.readLocalFileGlobal = readLocalFile;
+
+    fileInput.addEventListener('change', (e) => {
+        const allFiles = Array.from(e.target.files);
+        // Réinitialiser l'input pour permettre de re-sélectionner le même fichier si besoin
+        fileInput.value = '';
+        if (allFiles.length === 0) return;
+        const files = allFiles.filter(f => window.matchesSelectedFormat(f.name));
+        const ignored = allFiles.length - files.length;
+        if (ignored > 0) {
+            alert(`${ignored} fichier(s) ignoré(s) : ils ne sont pas au format ${window.formatLabel()}.`);
+        }
+        console.log(`${files.length} fichier(s) sélectionné(s)`);
+        files.forEach(readLocalFile);
     });
 
     /**
      * Charge une trace GPX sur la carte et met à jour l'état
      */
     /**
-     * CrÉe et affiche une trace issue d'un format dÉcodÉ personnalisÉ (FIT ou TRK)
+     * Crée et affiche une trace issue d'un format décodé personnalisé (FIT ou TRK)
      */
     function createCustomTrack(points, fileName, format) {
         if (!points || points.length < 2) {
@@ -216,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lineJoin: 'round'
         });
 
-        // IcÃ´nes de dÉpart et d'arrivÉe
+        // Icônes de départ et d'arrivée
         const startIcon = L.icon({
             iconUrl: 'https://cdn.jsdelivr.net/npm/leaflet-gpx@1.7.0/pin-icon-start.png',
             iconSize: [33, 50],
@@ -239,13 +289,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const trackGroup = L.featureGroup([polyline, startMarker, endMarker]).addTo(map);
 
-        // Événement de clic pour le profil altimÉtrique
+        // Événement de clic pour le profil altimétrique
         const cleanName = fileName.replace(/\.[^/.]+$/, '');
         polyline.on('click', () => {
             showElevationProfile(metrics.elevationData, flatLatLngs, cleanName, trackColor, trackId);
         });
 
-        // Flèches directionnelles rÉgulières
+        // Flèches directionnelles régulières
         let arrowDecorator = null;
         if (flatLatLngs.length > 1 && typeof L.polylineDecorator === 'function') {
             try {
@@ -303,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadFitTrack(arrayBuffer, fileName) {
         try {
             if (typeof window.parseFit !== 'function') {
-                throw new Error("Le module de dÉcodage FIT n'est pas chargÉ.");
+                throw new Error("Le module de décodage FIT n'est pas chargé.");
             }
             const points = window.parseFit(arrayBuffer);
             createCustomTrack(points, fileName, 'FIT');
@@ -319,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadTrkTrack(textContent, fileName) {
         try {
             if (typeof window.parseTrk !== 'function') {
-                throw new Error("Le module de dÉcodage TRK n'est pas chargÉ.");
+                throw new Error("Le module de décodage TRK n'est pas chargé.");
             }
             const points = window.parseTrk(textContent);
             createCustomTrack(points, fileName, 'TRK');
@@ -526,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nameDiv.className = 'track-name';
             const badgeClass = track.format ? `badge-${track.format.toLowerCase()}` : 'badge-gpx';
             const formatText = track.format || 'GPX';
-            nameDiv.innerHTML = `<span class="track-color-indicator" style="background-color: ${track.color};"></span>${track.name}<span class="track-format-badge ${badgeClass}">${formatText}</span>`;
+            nameDiv.innerHTML = `<span class="track-color-indicator" style="background-color: ${track.color};"></span>${escapeHtml(track.name)}<span class="track-format-badge ${badgeClass}">${formatText}</span>`;
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-delete';
@@ -765,16 +815,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Configuration de l'API Google ---
 // Ces constantes doivent être accessibles globalement pour les scripts GSI et GAPI
 const CLIENT_ID = '129413603825-hhavjkceh88vfou7q3okoffhn460u0id.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyCSzh2bC6BleQeaWcqFbJQtBqyzi8H3YKE';
-const APP_ID = '129413603825';
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
 // Variables globales pour l'API Google hors de l'écouteur DOMContentLoaded
 window.tokenClient = null;
 window.accessToken = null;
 window.tokenExpiry = 0; // Horodatage (ms) d'expiration du jeton d'accès
-window.pickerInited = false;
+window.pickerInited = true; // plus de dépendance au Google Picker (explorateur Drive intégré)
 window.gisInited = false;
+
+// Échappe le texte avant insertion HTML (noms de fichiers)
+function escapeHtml(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 // Le jeton est-il encore utilisable ? (marge de sécurité de 60 s)
 function isTokenValid() {
@@ -851,12 +906,12 @@ function setupDriveButton() {
             // Le jeton expire (≈ 1 h) : on mémorise l'échéance avec 60 s de marge
             const expiresIn = Number(resp.expires_in) || 3600;
             window.tokenExpiry = Date.now() + (expiresIn - 60) * 1000;
-            createPicker();
+            openDriveExplorer();
         };
 
         if (isTokenValid()) {
             // Jeton encore valide : on ouvre le picker directement
-            createPicker();
+            openDriveExplorer();
         } else if (!window.hasConsented) {
             // Première demande dans cette session : écran de consentement complet
             window.tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -871,117 +926,44 @@ function setupDriveButton() {
 // On l'appelle aussi au cas où le DOMContentLoaded se déclenche APRES gapi
 document.addEventListener('DOMContentLoaded', setupDriveButton);
 
-function createPicker() {
-    // Onglet 1 : "Tous mes parcours" (Recherche globale / vue plate de tous les parcours)
-    // Pas de filtre MIME : sur mobile, Google Drive attribue des types MIME
-    // variables aux fichiers .gpx, ce qui les rendait invisibles ou non-sélectionnables.
-    // La validation par extension est faite dans pickerCallback.
-    const allFilesView = new google.picker.DocsView(google.picker.ViewId.DOCS);
-    allFilesView.setTitle("Tous mes parcours");
-    allFilesView.setIncludeFolders(false);
+// Erreur dédiée pour interrompre proprement le chargement si le jeton a expiré
+class DriveSessionExpiredError extends Error {}
 
-    // Onglet 2 : "Parcourir mes dossiers" (Arborescence complète des répertoires)
-    const foldersView = new google.picker.DocsView(google.picker.ViewId.DOCS);
-    foldersView.setTitle("Parcourir mes dossiers");
-    foldersView.setIncludeFolders(true);
-
-    const picker = new google.picker.PickerBuilder()
-        .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
-        .setDeveloperKey(API_KEY)
-        .setAppId(APP_ID)
-        .setOAuthToken(window.accessToken)
-        .addView(allFilesView) // Onglet 1
-        .addView(foldersView)  // Onglet 2
-        .addView(new google.picker.DocsUploadView()) // Onglet 3 : Importer
-        .setCallback(pickerCallback)
-        .setSize(900, 600)
-        .build();
-    picker.setVisible(true);
+async function driveFetch(url) {
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${window.accessToken}` }
+    });
+    if (response.status === 401) {
+        resetToken();
+        throw new DriveSessionExpiredError('Session Google expirée');
+    }
+    if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+    }
+    return response;
 }
 
-async function pickerCallback(data) {
-    if (data.action === google.picker.Action.PICKED) {
-        console.log("Fichiers Drive sélectionnés :", data.docs);
-        const documents = data.docs;
-
-        // Filtrer par extension côté application (le Picker n'a plus de filtre MIME
-        // pour éviter le blocage sur mobile avec des types MIME inattendus)
-        const supportedExts = ['gpx', 'fit', 'trk'];
-        const validDocs = [];
-        const ignoredDocs = [];
-        for (const doc of documents) {
-            const ext = doc.name.split('.').pop().toLowerCase();
-            if (supportedExts.includes(ext)) {
-                validDocs.push(doc);
-            } else {
-                ignoredDocs.push(doc.name);
-            }
-        }
-
-        if (ignoredDocs.length > 0) {
-            alert(`${ignoredDocs.length} fichier(s) ignoré(s) (format non supporté) :\n${ignoredDocs.join('\n')}\n\nFormats acceptés : .gpx, .fit, .trk`);
-        }
-
-        for (const doc of validDocs) {
-            const fileId = doc.id;
-            const fileName = doc.name;
-
-            try {
-                // Télécharger le contenu du fichier via un Fetch HTTP avec le token OAuth
-                const fileUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-                const response = await fetch(fileUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${window.accessToken}`
-                    }
-                });
-
-                if (response.status === 401) {
-                    // Jeton expiré ou révoqué : on l'oublie pour en redemander un au prochain clic
-                    window.accessToken = null;
-                    window.tokenExpiry = 0;
-                    alert('Votre session Google a expiré.\nCliquez à nouveau sur "Ouvrir depuis Google Drive" pour vous reconnecter.');
-                    return;
-                }
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const ext = fileName.split('.').pop().toLowerCase();
-                if (ext === 'fit') {
-                    const arrayBuffer = await response.arrayBuffer();
-                    if (typeof window.loadFitTrackGlobal === 'function') {
-                        window.loadFitTrackGlobal(arrayBuffer, fileName);
-                    } else {
-                        console.error("loadFitTrackGlobal n'est pas défini");
-                    }
-                } else if (ext === 'trk') {
-                    const trkContent = await response.text();
-                    if (typeof window.loadTrkTrackGlobal === 'function') {
-                        window.loadTrkTrackGlobal(trkContent, fileName);
-                    } else {
-                        console.error("loadTrkTrackGlobal n'est pas défini");
-                    }
-                } else {
-                    // GPX (ou extension inconnue passée au filtre)
-                    const gpxContent = await response.text();
-                    if (typeof window.loadGpxTrackGlobal === 'function') {
-                        window.loadGpxTrackGlobal(gpxContent, fileName);
-                    } else {
-                        console.error("loadGpxTrackGlobal n'est pas défini");
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur lors du téléchargement depuis Drive:', error);
-                alert(`Impossible de charger le fichier ${fileName} depuis Drive.\n(${error.message})`);
-            }
-        }
+// Télécharge un fichier Drive et l'affiche selon son extension
+async function loadDriveFile(fileId, fileName) {
+    const response = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`);
+    const ext = window.getFileExtension(fileName);
+    if (ext === 'fit') {
+        window.loadFitTrackGlobal(await response.arrayBuffer(), fileName);
+    } else if (ext === 'trk') {
+        window.loadTrkTrackGlobal(await response.text(), fileName);
+    } else {
+        window.loadGpxTrackGlobal(await response.text(), fileName);
     }
 }
-// Variables globales pour l'API Google hors de l'écouteur DOMContentLoaded
-window.tokenClient = null;
-window.accessToken = null;
-window.pickerInited = false;
-window.gisInited = false;
+
+function handleDriveError(error, context) {
+    if (error instanceof DriveSessionExpiredError) {
+        alert('Votre session Google a expiré.\nCliquez à nouveau sur "Ouvrir depuis Google Drive" pour vous reconnecter.');
+        return;
+    }
+    console.error(`Erreur Drive (${context}) :`, error);
+    alert(`Erreur Google Drive pendant ${context} :\n${error.message}`);
+}
 
 // Initialisation GSI (Appelé par accounts.google.com/gsi/client)
 window.gisLoaded = function () {
@@ -1008,20 +990,3 @@ window.gisLoaded = function () {
     const driveBtn = document.getElementById('btn-google-drive');
     if (driveBtn && window.pickerInited) driveBtn.disabled = false;
 };
-
-// Initialisation gapi (Appelé par apis.google.com/js/api.js)
-window.gapiLoaded = function () {
-    gapi.load('client:picker', initializeGapiClient);
-};
-
-async function initializeGapiClient() {
-    console.log("GAPI Client chargé");
-    await gapi.client.init({
-        apiKey: API_KEY, // Utilise la constante globale au lieu de la chaîne en dur
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-    });
-    window.pickerInited = true;
-
-    const driveBtn = document.getElementById('btn-google-drive');
-    if (driveBtn && window.gisInited) driveBtn.disabled = false;
-}
