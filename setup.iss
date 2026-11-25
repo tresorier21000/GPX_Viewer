@@ -1,7 +1,7 @@
 [Setup]
 ; Informations de l'application
 AppName=GPX Viewer
-AppVersion=1.4.0
+AppVersion=1.4.1
 AppPublisher=Yves Balestra
 AppPublisherURL=https://tresorier21000.github.io/GPX_Viewer/
 AppSupportURL=https://tresorier21000.github.io/GPX_Viewer/
@@ -13,7 +13,7 @@ DefaultGroupName=GPX Viewer
 
 ; Dossier et nom du fichier d'installation généré
 OutputDir=.
-OutputBaseFilename=Setup_GPX_Viewer_v1.4.0
+OutputBaseFilename=Setup_GPX_Viewer_v1.4.1
 SetupIconFile=favicon.ico
 Compression=lzma
 SolidCompression=yes
@@ -31,6 +31,7 @@ Source: "index.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "style.css"; DestDir: "{app}"; Flags: ignoreversion
 Source: "app.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "trackParsers.js"; DestDir: "{app}"; Flags: ignoreversion
+Source: "driveExplorer.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "leaflet.polylineDecorator.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "favicon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "favicon.png"; DestDir: "{app}"; Flags: ignoreversion
