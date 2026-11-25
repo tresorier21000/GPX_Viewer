@@ -25,7 +25,14 @@
                     <img src="favicon.png" alt="GPX Logo" style="width: 32px; height: 32px; border-radius: 8px;">
                     <h1 style="margin: 0;">GPX Viewer</h1>
                 </div>
-                <button id="btn-help" class="btn-help" title="Comment utiliser l'application ?">?</button>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button id="btn-help" class="btn-help" title="Comment utiliser l'application ?">?</button>
+                    <button id="btn-toggle-sidebar" class="btn-toggle-sidebar" title="Masquer le panneau latéral">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </header>
 
             <section class="actions-section">
@@ -81,7 +88,7 @@
             <!-- Pied de page avec infos et contact -->
             <footer class="sidebar-footer"
                 style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
-                <p style="margin-bottom: 0.25rem;"><strong>GPX Viewer v1.4.1</strong></p>
+                <p style="margin-bottom: 0.25rem;"><strong>GPX Viewer v1.4.2</strong></p>
                 <p style="margin-bottom: 0.5rem;">Développé par <a href="mailto:yves.balestra@gmail.com"
                         style="color: var(--primary-color); text-decoration: none;">yves.balestra@gmail.com</a></p>
                 <div id="drive-access-notice"
@@ -98,6 +105,12 @@
 
         <!-- Container de la carte -->
         <main class="map-container">
+            <!-- Bouton flottant pour ré-ouvrir le panneau quand il est masqué -->
+            <button id="btn-open-sidebar" class="btn-open-sidebar" title="Afficher le panneau latéral" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
             <div id="map"></div>
 
             <!-- Profil Altimétrique (Caché par défaut) -->
@@ -157,7 +170,7 @@
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <!-- Custom App Script -->
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=18"></script>
 </body>
 
 </html>

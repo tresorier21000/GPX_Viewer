@@ -52,6 +52,73 @@ body {
     z-index: 1000;
     /* Above map leaflet controls */
     overflow-y: auto;
+    transition: margin-left 0.3s ease, transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+    margin-left: -350px;
+}
+
+/* Boutons de masquage / ouverture du panneau latéral */
+.btn-toggle-sidebar,
+.btn-open-sidebar {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.btn-toggle-sidebar {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+}
+
+.btn-toggle-sidebar:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #60a5fa;
+}
+
+.btn-open-sidebar {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 40px;
+    height: 40px;
+    z-index: 1001;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.btn-open-sidebar:hover {
+    background: rgba(30, 41, 59, 0.95);
+    color: #60a5fa;
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        min-width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        height: 100%;
+    }
+
+    .sidebar.collapsed {
+        margin-left: 0;
+        transform: translateX(-100%);
+    }
 }
 
 .sidebar-header {

@@ -67,6 +67,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const elevationProfileContainer = document.getElementById('elevation-profile-container');
     const btnCloseProfile = document.getElementById('btn-close-profile');
 
+    // Éléments du panneau latéral
+    const sidebar = document.querySelector('.sidebar');
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    const btnOpenSidebar = document.getElementById('btn-open-sidebar');
+
+    function toggleSidebar(collapse) {
+        if (collapse) {
+            sidebar.classList.add('collapsed');
+            if (btnOpenSidebar) btnOpenSidebar.style.display = 'flex';
+        } else {
+            sidebar.classList.remove('collapsed');
+            if (btnOpenSidebar) btnOpenSidebar.style.display = 'none';
+        }
+        // Recalculer la taille de la carte Leaflet après la transition CSS
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 320);
+    }
+
+    if (btnToggleSidebar) {
+        btnToggleSidebar.addEventListener('click', () => toggleSidebar(true));
+    }
+    if (btnOpenSidebar) {
+        btnOpenSidebar.addEventListener('click', () => toggleSidebar(false));
+    }
+
     // Éléments de la Modale d'Aide
     const btnHelp = document.getElementById('btn-help');
     const btnCloseHelp = document.getElementById('btn-close-help');
