@@ -333,10 +333,41 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadFitTrackGlobal = loadFitTrack;
     window.loadTrkTrackGlobal = loadTrkTrack;
 
+    // Fonction utilitaire pour extraire le nom lisible de la trace (surtout utile quand Android renomme le fichier en "inbound...")
+    function extractTrackName(gpxContent, fallbackFileName) {
+        try {
+            // Recherche de la balise <name> dans <trk> ou <metadata>
+            const match = gpxContent.match(/<trk>[\s\S]*?<name>([\s\S]*?)<\/name>/i) 
+                       || gpxContent.match(/<metadata>[\s\S]*?<name>([\s\S]*?)<\/name>/i)
+                       || gpxContent.match(/<name>([\s\S]*?)<\/name>/i);
+            if (match && match[1]) {
+                const cleaned = match[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').trim();
+                if (cleaned.length > 0) {
+                    return cleaned;
+                }
+            }
+        } catch (err) {
+            console.warn("Impossible d'extraire le nom XML du GPX:", err);
+        }
+        return (fallbackFileName || 'Trace GPX').replace(/\.[^/.]+$/, '');
+    }
+
     function loadGpxTrack(gpxContent, fileName) {
         const trackColor = window.trackColors[window.colorIndex % window.trackColors.length];
         window.colorIndex++;
         const trackId = 'track-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+        // Si le nom du fichier est générique (type inbound... sur Android/iOS), ou systématiquement si disponible, on cherche le vrai nom dans le GPX
+        let cleanName = fileName ? fileName.replace(/\.[^/.]+$/, '') : 'Trace';
+        if (/^inbound/i.test(cleanName) || /^[0-9a-f]{10,}/i.test(cleanName) || /^document/i.test(cleanName)) {
+            cleanName = extractTrackName(gpxContent, fileName);
+        } else {
+            // Si le GPX contient un nom interne explicite, on peut aussi l'utiliser
+            const internalName = extractTrackName(gpxContent, null);
+            if (internalName && internalName !== 'Trace GPX') {
+                cleanName = internalName;
+            }
+        }
 
         const gpxLayer = new L.GPX(gpxContent, {
             async: true,
@@ -398,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Ajouter l'évènement de clic sur la trace pour afficher son profil
             polyline.on('click', () => {
-                showElevationProfile(elevationData, flatLatLngs, fileName.replace('.gpx', ''), trackColor, trackId);
+                showElevationProfile(elevationData, flatLatLngs, cleanName, trackColor, trackId);
             });
 
             // --- Fleches Directionnelles ---
@@ -433,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const trackData = {
                 id: trackId,
-                name: fileName.replace(/\.[^/.]+$/, ''),
+                name: cleanName,
                 format: 'GPX',
                 gpxLayer: gpxLayer,
                 arrowDecorator: arrowDecorator,
