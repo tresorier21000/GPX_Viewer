@@ -40,6 +40,291 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("Carte Leaflet initialisée avec succès !");
 
+    // --- Module Géolocalisation & Suivi Rando Smartphone ---
+    const gpsState = {
+        active: false,
+        watchId: null,
+        wakeLock: null,
+        userMarker: null,
+        accuracyCircle: null,
+        lastPosition: null,
+        autoCenter: true,
+        controlButton: null
+    };
+
+    function calcDistanceMeters(lat1, lon1, lat2, lon2) {
+        if (typeof haversineDistance === 'function') {
+            return haversineDistance(lat1, lon1, lat2, lon2);
+        }
+        const R = 6371000;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function getDistanceToNearestTrack(userLat, userLng) {
+        if (!appState.tracks || appState.tracks.length === 0) return null;
+        let minDistance = Infinity;
+
+        for (const track of appState.tracks) {
+            if (!track.points || track.points.length === 0) continue;
+            for (let i = 0; i < track.points.length; i++) {
+                const pt = track.points[i];
+                const dist = calcDistanceMeters(userLat, userLng, pt.lat, pt.lng);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                }
+            }
+        }
+        return minDistance === Infinity ? null : minDistance;
+    }
+
+    function updateGpsBanner(position) {
+        const banner = document.getElementById('gps-info-banner');
+        const textEl = document.getElementById('gps-info-text');
+        const recenterBtn = document.getElementById('btn-gps-recenter');
+        if (!banner || !textEl) return;
+
+        if (!gpsState.active) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        banner.style.display = 'flex';
+
+        if (!position) {
+            textEl.innerHTML = `Recherche GPS en cours...`;
+            return;
+        }
+
+        const accuracy = Math.round(position.coords.accuracy || 0);
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const dist = getDistanceToNearestTrack(lat, lng);
+
+        let html = '';
+        if (dist === null) {
+            html = `GPS actif (±${accuracy} m) &bull; Aucun parcours affiché`;
+        } else {
+            const roundedDist = Math.round(dist);
+            if (roundedDist <= 25) {
+                html = `Sur le parcours (<span class="gps-dist">${roundedDist} m</span> &bull; ±${accuracy} m)`;
+            } else if (roundedDist <= 100) {
+                html = `À <span class="gps-dist">${roundedDist} m</span> du tracé (±${accuracy} m)`;
+            } else if (roundedDist < 1000) {
+                html = `⚠️ Écart tracé : <span class="gps-dist warning">${roundedDist} m</span> (±${accuracy} m)`;
+            } else {
+                const km = (roundedDist / 1000).toFixed(1);
+                html = `⚠️ Écart tracé : <span class="gps-dist warning">${km} km</span> (±${accuracy} m)`;
+            }
+        }
+        textEl.innerHTML = html;
+
+        if (recenterBtn) {
+            recenterBtn.style.display = gpsState.autoCenter ? 'none' : 'inline-block';
+        }
+    }
+
+    async function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+            try {
+                gpsState.wakeLock = await navigator.wakeLock.request('screen');
+                gpsState.wakeLock.addEventListener('release', () => {
+                    console.log('Screen Wake Lock relâché');
+                });
+                console.log('Screen Wake Lock activé');
+            } catch (err) {
+                console.warn('Wake Lock non disponible ou refusé :', err);
+            }
+        }
+    }
+
+    function releaseWakeLock() {
+        if (gpsState.wakeLock) {
+            try {
+                gpsState.wakeLock.release();
+            } catch (e) {}
+            gpsState.wakeLock = null;
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && gpsState.active && !gpsState.wakeLock) {
+            requestWakeLock();
+        }
+    });
+
+    map.on('dragstart', () => {
+        if (gpsState.active && gpsState.autoCenter) {
+            gpsState.autoCenter = false;
+            const recenterBtn = document.getElementById('btn-gps-recenter');
+            if (recenterBtn) recenterBtn.style.display = 'inline-block';
+        }
+    });
+
+    const recenterBtn = document.getElementById('btn-gps-recenter');
+    if (recenterBtn) {
+        recenterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            gpsState.autoCenter = true;
+            recenterBtn.style.display = 'none';
+            if (gpsState.lastPosition) {
+                const lat = gpsState.lastPosition.coords.latitude;
+                const lng = gpsState.lastPosition.coords.longitude;
+                map.panTo([lat, lng], { animate: true, duration: 0.5 });
+            }
+        });
+    }
+
+    function startGpsTracking() {
+        if (!('geolocation' in navigator)) {
+            alert("La géolocalisation n'est pas supportée par votre navigateur.");
+            return;
+        }
+
+        gpsState.active = true;
+        gpsState.autoCenter = true;
+        if (gpsState.controlButton) {
+            gpsState.controlButton.classList.add('active');
+            gpsState.controlButton.setAttribute('title', 'Arrêter la géolocalisation');
+        }
+
+        updateGpsBanner(null);
+        requestWakeLock();
+
+        gpsState.watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                if (!gpsState.active) return;
+                gpsState.lastPosition = pos;
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const accuracy = pos.coords.accuracy || 10;
+
+                // 1. Cercle de précision
+                if (!gpsState.accuracyCircle) {
+                    gpsState.accuracyCircle = L.circle([lat, lng], {
+                        radius: accuracy,
+                        color: '#3b82f6',
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.12,
+                        weight: 1
+                    }).addTo(map);
+                } else {
+                    gpsState.accuracyCircle.setLatLng([lat, lng]);
+                    gpsState.accuracyCircle.setRadius(accuracy);
+                }
+
+                // 2. Marqueur position utilisateur (Point bleu avec onde pulsante)
+                if (!gpsState.userMarker) {
+                    const gpsIcon = L.divIcon({
+                        className: '',
+                        html: '<div class="user-gps-wrapper"><div class="user-gps-pulse"></div><div class="user-gps-core"></div></div>',
+                        iconSize: [22, 22],
+                        iconAnchor: [11, 11]
+                    });
+                    gpsState.userMarker = L.marker([lat, lng], {
+                        icon: gpsIcon,
+                        zIndexOffset: 1000
+                    }).addTo(map);
+                } else {
+                    gpsState.userMarker.setLatLng([lat, lng]);
+                }
+
+                // 3. Auto-recentrage
+                if (gpsState.autoCenter) {
+                    if (map.getZoom() < 15) {
+                        map.setView([lat, lng], 16, { animate: true });
+                    } else {
+                        map.panTo([lat, lng], { animate: true });
+                    }
+                }
+
+                // 4. Mise à jour de la bannière d'information
+                updateGpsBanner(pos);
+            },
+            (err) => {
+                console.warn('Erreur GPS :', err);
+                let msg = "Erreur de géolocalisation.";
+                if (err.code === 1) { // PERMISSION_DENIED
+                    msg = "Autorisation de géolocalisation refusée par l'appareil ou le navigateur.\n\nVérifiez que l'accès à la position est autorisé pour ce site dans les paramètres de votre navigateur.";
+                } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                    msg = "Signal GPS indisponible.\n\nVérifiez que le GPS (localisation) de votre smartphone est activé.";
+                } else if (err.code === 3) { // TIMEOUT
+                    msg = "Délai de recherche GPS dépassé.";
+                }
+                alert(msg);
+                stopGpsTracking();
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 2000,
+                timeout: 15000
+            }
+        );
+    }
+
+    function stopGpsTracking() {
+        gpsState.active = false;
+        if (gpsState.watchId !== null) {
+            navigator.geolocation.clearWatch(gpsState.watchId);
+            gpsState.watchId = null;
+        }
+        releaseWakeLock();
+
+        if (gpsState.accuracyCircle && map.hasLayer(gpsState.accuracyCircle)) {
+            map.removeLayer(gpsState.accuracyCircle);
+            gpsState.accuracyCircle = null;
+        }
+        if (gpsState.userMarker && map.hasLayer(gpsState.userMarker)) {
+            map.removeLayer(gpsState.userMarker);
+            gpsState.userMarker = null;
+        }
+        if (gpsState.controlButton) {
+            gpsState.controlButton.classList.remove('active');
+            gpsState.controlButton.setAttribute('title', 'Me localiser / Suivi rando (Smartphone)');
+        }
+
+        const banner = document.getElementById('gps-info-banner');
+        if (banner) banner.style.display = 'none';
+    }
+
+    // Ajout du bouton de géolocalisation sur la carte Leaflet
+    const LocateControl = L.Control.extend({
+        options: { position: 'topleft' },
+        onAdd: function () {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-locate');
+            const link = L.DomUtil.create('a', '', container);
+            link.href = '#';
+            link.title = 'Me localiser / Suivi rando (Smartphone)';
+            link.setAttribute('role', 'button');
+            link.setAttribute('aria-label', 'Me localiser');
+            link.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:auto;">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+                    <circle cx="12" cy="12" r="7" stroke-dasharray="2 2" stroke-width="1.5"></circle>
+                </svg>
+            `;
+            gpsState.controlButton = link;
+
+            L.DomEvent.disableClickPropagation(container);
+            L.DomEvent.on(link, 'click', (e) => {
+                L.DomEvent.preventDefault(e);
+                if (gpsState.active) {
+                    stopGpsTracking();
+                } else {
+                    startGpsTracking();
+                }
+            });
+
+            return container;
+        }
+    });
+    map.addControl(new LocateControl());
+
     // 3. Bouton Fichier Local
     const localFileBtn = document.getElementById('btn-local-file');
     const fileInput = document.getElementById('gpx-file-input');
@@ -332,7 +617,8 @@ document.addEventListener('DOMContentLoaded', () => {
             arrowDecorator: arrowDecorator,
             distance: metrics.distanceKm,
             elevationGain: metrics.elevationGainM,
-            color: trackColor
+            color: trackColor,
+            points: points
         };
 
         appState.tracks.push(trackData);
@@ -520,7 +806,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 arrowDecorator: arrowDecorator,
                 distance: distance,
                 elevationGain: elevationGain,
-                color: trackColor
+                color: trackColor,
+                points: flatLatLngs.map(ll => ({ lat: ll.lat, lng: ll.lng }))
             };
 
             appState.tracks.push(trackData);
@@ -603,6 +890,11 @@ document.addEventListener('DOMContentLoaded', () => {
             li.appendChild(statsDiv);
             trackList.appendChild(li);
         });
+
+        // Si le suivi GPS est actif, actualiser immédiatement la distance à la trace
+        if (gpsState.active && gpsState.lastPosition) {
+            updateGpsBanner(gpsState.lastPosition);
+        }
     }
 
     /**

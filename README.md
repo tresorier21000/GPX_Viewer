@@ -1,11 +1,22 @@
 # GPX Viewer
 
-**Version actuelle : 1.4.1** (novembre 2026) – voir l'[historique des versions](#historique-des-versions).
+**Version actuelle : 1.4.2** (novembre 2026) – voir l'[historique des versions](#historique-des-versions).
 
 Application web permettant d'afficher et de comparer des traces **GPX, FIT et TRK** sur une carte interactive, avec chargement de plusieurs fichiers ou d'un dossier entier, depuis votre ordinateur ou votre Google Drive.
 
 👉 **Accès en ligne direct (recommandé) : [https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**  
-*(Rien à installer : fonctionne directement dans n'importe quel navigateur web moderne sur ordinateur, tablette ou smartphone, avec accès complet à Google Drive).*
+*(Rien à installer : fonctionne directement dans n'importe quel navigateur web moderne sur ordinateur, tablette ou smartphone, avec accès complet à Google Drive et géolocalisation GPS).*
+
+---
+
+## Nouveautés de la version 1.4.2
+
+*   **Géolocalisation en temps réel & suivi rando (Smartphone)** :
+    *   **Curseur de position en direct** : un bouton cible 🎯 placé sur la carte permet d'activer le suivi GPS de votre smartphone. Votre position apparaît instantanément avec un point bleu pulsant et un cercle indiquant la précision du signal GPS.
+    *   **Guidage & écart au tracé** : un bandeau dynamique affiche en continu la distance exacte entre votre position et la trace la plus proche (*"Sur le parcours"*, *"À X m du tracé"* ou alerte visuelle ⚠️ si vous vous écartez de plus de 100 m).
+    *   **Recentrage automatique intelligent** : la carte se cale et suit vos déplacements. Si vous explorez la carte manuellement, l'auto-recentrage se suspend et un bouton *"Recentrer"* vous permet de revenir d'un geste sur votre position.
+    *   **Maintien de l'écran allumé (Wake Lock)** : empêche la mise en veille automatique de l'écran de votre smartphone pendant que vous marchez et suivez votre parcours.
+*   **Paragraphe de sécurité & consignes de danger** : intégration d'un avertissement de sécurité complet dans l'aide et la documentation rappelant les précautions indispensables en randonnée (zones blanches hors réseau, autonomie batterie, matériel de secours).
 
 ---
 
@@ -93,6 +104,21 @@ Pour des raisons de sécurité imposées par Google, chaque autorisation dure en
 
 ---
 
+## ⚠️ Avertissements de sécurité et limitations en randonnée (DANGER)
+
+Le suivi GPS sur smartphone a été conçu pour vous aider à vous repositionner en cas de doute ou de perte de trace. Cependant, **la montagne et la nature présentent des risques réels** et vous devez impérativement respecter ces consignes :
+
+1. 📵 **Zones blanches et absence totale de réseau mobile :**  
+   Le récepteur GPS de votre smartphone continue de capter les satellites même sans réseau 4G/5G. **En revanche, les fonds de cartes (IGN / OpenTopoMap, OSM, Satellite) ne peuvent pas se charger en direct sans connexion Internet**. Si vous êtes en zone blanche non couverte, la carte apparaîtra vierge ou grise autour de vous.  
+   👉 *Recommandation vitale :* avant de quitter votre domicile ou l'hôtel, ouvrez l'application et **parcourez/zoomez l'ensemble de votre itinéraire** (en Wi-Fi ou 4G/5G) pour pré-charger les tuiles dans le cache du navigateur. Emportez **systématiquement une carte papier IGN au 1:25 000 et une boussole**.
+2. 🔋 **Consommation importante de la batterie :**  
+   L'activation permanente du récepteur GPS haute précision couplée au maintien de l'écran allumé (Wake Lock) décharge rapidement la batterie d'un smartphone (en 2 à 4 heures selon le modèle).  
+   👉 *Recommandation :* désactivez le suivi GPS quand le sentier est évident et bien balisé, et emportez systématiquement une **batterie de secours externe (powerbank)** et un câble de recharge.
+3. 🔒 **Fonctionnement exclusif en HTTPS :**  
+   Pour des raisons strictes de sécurité imposées par les navigateurs modernes, la géolocalisation et l'API Wake Lock sont désactivées sur un fichier local ouvert depuis un disque (`file://`). Elles fonctionnent exclusivement sur la version officielle sécurisée en ligne : **[https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**.
+
+---
+
 ## Documentation
 
 *   [Guides/Guide_Adherent_GPX_Viewer.docx](Guides/Guide_Adherent_GPX_Viewer.docx) : guide complet pour les utilisateurs et adhérents (accès, connexion Google Drive, utilisation pas à pas et résolution des problèmes fréquents).
@@ -103,6 +129,7 @@ Pour des raisons de sécurité imposées par Google, chaque autorisation dure en
 
 | Version | Date | Changements |
 |---|---|---|
+| **1.4.2** | Novembre 2026 | Géolocalisation GPS en direct sur smartphone (point bleu pulsant et cercle de précision) ; calcul continu de l'écart à la trace avec bandeau d'information et alerte d'éloignement (> 100 m) ; recentrage automatique avec reprise manuelle ; maintien de l'écran allumé (Wake Lock) ; encadré de sécurité et avertissement DANGER rando (zones blanches / batterie). |
 | **1.4.1** | Novembre 2026 | Mode plein écran (repliement/dépliement du volet latéral avec flèches `<` et `>`) sur PC et mobile ; compatibilité mobile complète (correction du sélecteur de fichiers Android/iOS) ; extraction automatique du vrai nom du parcours depuis les métadonnées internes du GPX (remplace les noms temporaires `inbound...`) ; masquage dynamique des contrôles Leaflet sur mobile pour une ergonomie tactile optimale. |
 | **1.4.0** | Novembre 2026 | Prise en charge des formats `.fit` (Garmin, Wahoo) et `.trk` (TwoNav, CompeGPS) ; choix du type de fichier à ouvrir (GPX par défaut, FIT, TRK ou Tous) ; ouverture d'un dossier local complet ; glisser-déposer ; nouvel explorateur Google Drive intégré (remplace la fenêtre Google Picker) : colonne « Dossier », recherche, tri, dossiers contenant des traces seulement et par ordre alphabétique, bouton « Tout ouvrir » ; suppression de l'onglet « Importer » (non fonctionnel en lecture seule) ; génération de l'installateur `Setup_GPX_Viewer_v1.4.0.exe`. |
 | 1.3.1 | Novembre 2026 | Ajout des flèches directionnelles sur les traces affichées avec le plug-in Leaflet PolylineDecorator ; génération de l'installateur Windows `Setup_GPX_Viewer_v1.3.1.exe`. |

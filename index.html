@@ -10,7 +10,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=16">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -110,7 +110,7 @@
             <!-- Pied de page avec infos et contact -->
             <footer class="sidebar-footer"
                 style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
-                <p style="margin-bottom: 0.25rem;"><strong>GPX Viewer v1.4.1</strong></p>
+                <p style="margin-bottom: 0.25rem;"><strong>GPX Viewer v1.4.2</strong></p>
                 <p style="margin-bottom: 0.5rem;">Développé par <a href="mailto:yves.balestra@gmail.com"
                         style="color: var(--primary-color); text-decoration: none;">yves.balestra@gmail.com</a></p>
                 <div id="drive-access-notice"
@@ -128,6 +128,12 @@
         <!-- Container de la carte -->
         <main class="map-container">
             <div id="map"></div>
+            <!-- Bandeau de géolocalisation et distance au tracé -->
+            <div id="gps-info-banner" class="gps-info-banner" style="display: none;">
+                <span class="gps-dot"></span>
+                <span id="gps-info-text">Recherche GPS...</span>
+                <button id="btn-gps-recenter" class="gps-recenter-btn" title="Recentrer sur ma position" style="display: none;">Recentrer</button>
+            </div>
 
             <!-- Profil Altimétrique (Caché par défaut) -->
             <div id="elevation-profile-container" class="elevation-profile-container" style="display: none;">
@@ -163,11 +169,25 @@
                     <li><strong>Type de fichier :</strong> Choisissez d'abord le format à ouvrir (<em>GPX</em> par défaut, <em>FIT</em>, <em>TRK</em> ou <em>Tous</em>). Seuls les fichiers de ce type sont proposés et chargés.</li>
                     <li><strong>Ajouter des traces :</strong> "Ouvrir fichier(s) local" charge un ou plusieurs fichiers ; "Ouvrir un dossier local" liste les traces du dossier choisi (sous-dossiers compris) pour cocher celles à afficher ; la fenêtre Windows de choix de dossier ne montre pas les fichiers, c'est normal. Avec "Google Drive", l'onglet <em>Tous mes parcours</em> liste vos traces avec leur dossier (recherche, tri par colonne, <em>Maj + clic</em> pour cocher une plage) ; l'onglet <em>Mes dossiers</em> ne montre que les dossiers qui contiennent des traces, par ordre alphabétique, avec un bouton <em>Tout ouvrir</em>.</li>
                     <li><strong>Sens du parcours :</strong> Des flèches directionnelles indiquent automatiquement le sens d'avancement tout au long du tracé.</li>
+                    <li><strong>Suivi GPS & Randonnée (Smartphone) :</strong> Cliquez sur le bouton cible 🎯 en haut à gauche pour afficher votre position réelle en direct (point bleu pulsant et cercle de précision). En cas de doute sur le chemin, l'application vous indique si vous êtes bien sur la trace ou à quelle distance vous vous en écartez (avec alerte visuelle au-delà de 100 m), et maintient votre écran allumé pendant le suivi.</li>
                     <li><strong>Interagir :</strong> Cliquez sur une ligne tracée sur la carte pour faire apparaître son <strong>profil altimétrique</strong>. Passez la souris sur la courbe du graphique pour voir un curseur se déplacer en direct sur la trace géographique.</li>
                     <li><strong>Couches de carte :</strong> En haut à droite de la carte, survolez l'icône des calques pour passer en vue Satellite ou Carte Randonnée (Topo).</li>
                     <li><strong>Statistiques :</strong> Le panneau de gauche additionne automatiquement la distance et le dénivelé positif de l'ensemble des parcours affichés.</li>
                     <li><strong>Nettoyer :</strong> Supprimez une trace individuelle via sa corbeille ou utilisez "Tout effacer" pour réinitialiser la carte.</li>
                 </ul>
+
+                <!-- Avertissement de sécurité bien identifiable -->
+                <div style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: rgba(239, 68, 68, 0.12); border-left: 4px solid #ef4444; border-radius: 6px;">
+                    <h3 style="color: #f87171; margin-bottom: 0.5rem; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem;">
+                        ⚠️ AVERTISSEMENT DE SÉCURITÉ EN RANDONNÉE (DANGER)
+                    </h3>
+                    <ul style="font-size: 0.82rem; line-height: 1.5; color: #cbd5e1; margin-left: 1.2rem; padding: 0;">
+                        <li><strong>Zones blanches & absence de réseau mobile :</strong> Le GPS de votre smartphone fonctionne sans réseau, <em>mais les fonds de cartes (IGN / Topo / Satellite) ne se chargeront plus en zone non couverte</em>. <strong>Recommandation vitale :</strong> consultez et zoomez sur tout votre itinéraire avant de partir tant que vous avez du réseau ou du Wi-Fi (mise en cache des tuiles), et conservez systématiquement une carte papier IGN et une boussole dans votre sac.</li>
+                        <li><strong>Autonomie de la batterie :</strong> Le suivi GPS actif en continu avec l'écran allumé (Wake Lock) consomme rapidement la batterie du smartphone. Désactivez le suivi quand votre cheminement est évident et emportez toujours une batterie externe de secours (powerbank).</li>
+                        <li><strong>Protocole HTTPS requis :</strong> La géolocalisation et le maintien de l'écran allumé sont strictement bloqués par les navigateurs sur un fichier local (<code>file://</code>). Utilisez exclusivement la version en ligne officielle sécurisée : <a href="https://tresorier21000.github.io/GPX_Viewer/" target="_blank" style="color: #60a5fa; text-decoration: underline;">tresorier21000.github.io/GPX_Viewer/</a>.</li>
+                    </ul>
+                </div>
+
                 <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);"><em>Astuce : Ne chargez pas plus de 10 traces simultanément pour conserver une lisibilité optimale des couleurs et des graphiques.</em></p>
             </div>
         </div>
@@ -218,7 +238,7 @@
     <!-- Google Identity Services (connexion Google Drive) -->
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <!-- Custom App Script -->
-    <script src="app.js?v=24"></script>
+    <script src="app.js?v=25"></script>
     <!-- Explorateur Google Drive intégré -->
     <script src="driveExplorer.js?v=7"></script>
 </body>
