@@ -1,11 +1,21 @@
 # GPX Viewer
 
-**Version actuelle : 1.4.0** (novembre 2026) – voir l'[historique des versions](#historique-des-versions).
+**Version actuelle : 1.4.1** (novembre 2026) – voir l'[historique des versions](#historique-des-versions).
 
 Application web permettant d'afficher et de comparer des traces **GPX, FIT et TRK** sur une carte interactive, avec chargement de plusieurs fichiers ou d'un dossier entier, depuis votre ordinateur ou votre Google Drive.
 
 👉 **Accès en ligne direct (recommandé) : [https://tresorier21000.github.io/GPX_Viewer/](https://tresorier21000.github.io/GPX_Viewer/)**  
 *(Rien à installer : fonctionne directement dans n'importe quel navigateur web moderne sur ordinateur, tablette ou smartphone, avec accès complet à Google Drive).*
+
+---
+
+## Nouveautés de la version 1.4.1
+
+*   **Mode plein écran (PC & Mobile)** : Dès qu'une trace est affichée sur la carte, un bouton flèche `<` apparaît dans l'en-tête du volet latéral pour le replier d'un clic ou d'un toucher. La carte et le profil altimétrique occupent alors 100 % de l'écran. Un bouton flottant `>` fixé en haut à gauche permet de rouvrir le volet à tout moment.
+*   **Compatibilité mobile renforcée** :
+    *   Correction du sélecteur de fichiers sur smartphone (Android / iOS) avec prise en compte des types MIME variés et détection par analyse de contenu XML.
+    *   **Conservation des vrais noms de parcours** : extraction automatique du nom lisible depuis les balises `<name>` du GPX, remplaçant les noms techniques temporaires générés par les smartphones (du type `inbound3434345xxxxxxxx`).
+    *   Masquage automatique des contrôles de carte sous-jacents lorsque le volet est ouvert sur smartphone pour une ergonomie tactile parfaite.
 
 ---
 
@@ -93,6 +103,7 @@ Pour des raisons de sécurité imposées par Google, chaque autorisation dure en
 
 | Version | Date | Changements |
 |---|---|---|
+| **1.4.1** | Novembre 2026 | Mode plein écran (repliement/dépliement du volet latéral avec flèches `<` et `>`) sur PC et mobile ; compatibilité mobile complète (correction du sélecteur de fichiers Android/iOS) ; extraction automatique du vrai nom du parcours depuis les métadonnées internes du GPX (remplace les noms temporaires `inbound...`) ; masquage dynamique des contrôles Leaflet sur mobile pour une ergonomie tactile optimale. |
 | **1.4.0** | Novembre 2026 | Prise en charge des formats `.fit` (Garmin, Wahoo) et `.trk` (TwoNav, CompeGPS) ; choix du type de fichier à ouvrir (GPX par défaut, FIT, TRK ou Tous) ; ouverture d'un dossier local complet ; glisser-déposer ; nouvel explorateur Google Drive intégré (remplace la fenêtre Google Picker) : colonne « Dossier », recherche, tri, dossiers contenant des traces seulement et par ordre alphabétique, bouton « Tout ouvrir » ; suppression de l'onglet « Importer » (non fonctionnel en lecture seule) ; génération de l'installateur `Setup_GPX_Viewer_v1.4.0.exe`. |
 | 1.3.1 | Novembre 2026 | Ajout des flèches directionnelles sur les traces affichées avec le plug-in Leaflet PolylineDecorator ; génération de l'installateur Windows `Setup_GPX_Viewer_v1.3.1.exe`. |
 | **1.3.0** | Novembre 2026 | Détection automatique du protocole local `file://` avec proposition de bascule en un clic vers la version en ligne pour Google Drive ; ajout d'un raccourci web dans le menu Démarrer de l'installateur Windows (`setup.iss`) ; clarification dans la documentation. |
