@@ -101,28 +101,35 @@ body {
 }
 
 .btn-open-sidebar {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    z-index: 2500; /* Bien au-dessus des tuiles Leaflet et des contrôles de zoom */
-    background: #1e293b;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 8px;
+    position: fixed !important;
+    top: 16px !important;
+    left: 16px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    z-index: 99999 !important; /* Priorité maximale absolue au-dessus de TOUT */
+    background: #1e293b !important;
+    color: #ffffff !important;
+    border: 2px solid #3b82f6 !important; /* Bordure bleue bien visible */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    display: none;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.btn-open-sidebar svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+    pointer-events: none !important;
 }
 
 .btn-open-sidebar:hover {
-    background: #334155;
-    color: #60a5fa;
-    border-color: #60a5fa;
-    transform: scale(1.05);
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+    transform: scale(1.08) !important;
 }
 
 @media (max-width: 768px) {
