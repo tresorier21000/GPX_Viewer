@@ -104,21 +104,24 @@ body {
     position: absolute;
     top: 16px;
     left: 16px;
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    min-height: 42px;
-    z-index: 1001;
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    z-index: 2500; /* Bien au-dessus des tuiles Leaflet et des contrôles de zoom */
+    background: #1e293b;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    border-radius: 8px;
 }
 
 .btn-open-sidebar:hover {
-    background: rgba(30, 41, 59, 0.95);
+    background: #334155;
     color: #60a5fa;
+    border-color: #60a5fa;
     transform: scale(1.05);
 }
 
@@ -344,6 +347,11 @@ h2 {
     right: 0;
     width: 100%;
     height: 100%;
+}
+
+/* Décaler légèrement les boutons de zoom Leaflet (+ / -) vers le bas quand la sidebar est repliée pour ne pas chevaucher le bouton d'ouverture */
+body.sidebar-is-collapsed .leaflet-top.leaflet-left {
+    top: 60px;
 }
 
 /* Rendre les lignes de traces GPX cliquables avec le curseur main */
