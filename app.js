@@ -75,9 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleSidebar(collapse) {
         if (collapse) {
             sidebar.classList.add('collapsed');
+            document.body.classList.add('sidebar-is-collapsed');
             if (btnOpenSidebar) btnOpenSidebar.style.display = 'flex';
         } else {
             sidebar.classList.remove('collapsed');
+            document.body.classList.remove('sidebar-is-collapsed');
             if (btnOpenSidebar) btnOpenSidebar.style.display = 'none';
         }
         // Recalculer immédiatement et après la transition CSS pour Leaflet

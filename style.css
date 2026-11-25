@@ -49,8 +49,8 @@ body {
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
-    z-index: 1000;
-    /* Above map leaflet controls */
+    z-index: 2000;
+    /* Bien au-dessus de Leaflet (z-index: 1000) */
     overflow-y: auto;
     transition: margin-left 0.3s ease, width 0.3s ease, min-width 0.3s ease, padding 0.3s ease, transform 0.3s ease;
 }
@@ -131,6 +131,8 @@ body {
         left: 0;
         bottom: 0;
         height: 100%;
+        background: #0f172a; /* Fond opaque sur mobile pour masquer les boutons sous-jacents de la carte */
+        z-index: 2000;
     }
 
     .sidebar.collapsed {
@@ -139,10 +141,27 @@ body {
         width: 100% !important;
         min-width: 100% !important;
     }
+
+    /* Quand le panneau est ouvert sur mobile, on masque les contrôles Leaflet (fonds de carte, zoom) pour éviter tout chevauchement */
+    body:not(.sidebar-is-collapsed) .leaflet-top,
+    body:not(.sidebar-is-collapsed) .leaflet-bottom {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    body.sidebar-is-collapsed .leaflet-top,
+    body.sidebar-is-collapsed .leaflet-bottom {
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 0.2s ease;
+    }
 }
 
 .sidebar-header {
     margin-bottom: 2rem;
+    position: relative;
+    z-index: 2005;
 }
 
 .sidebar-header h1 {
