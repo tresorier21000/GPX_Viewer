@@ -80,17 +80,27 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebar.classList.remove('collapsed');
             if (btnOpenSidebar) btnOpenSidebar.style.display = 'none';
         }
-        // Recalculer la taille de la carte Leaflet après la transition CSS
+        // Recalculer immédiatement et après la transition CSS pour Leaflet
+        map.invalidateSize();
         setTimeout(() => {
             map.invalidateSize();
-        }, 320);
+        }, 150);
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 350);
     }
 
     if (btnToggleSidebar) {
-        btnToggleSidebar.addEventListener('click', () => toggleSidebar(true));
+        btnToggleSidebar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar(true);
+        });
     }
     if (btnOpenSidebar) {
-        btnOpenSidebar.addEventListener('click', () => toggleSidebar(false));
+        btnOpenSidebar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar(false);
+        });
     }
 
     // Éléments de la Modale d'Aide
@@ -460,6 +470,15 @@ document.addEventListener('DOMContentLoaded', () => {
         trackCountSpan.textContent = appState.tracks.length;
         statTotalDistance.textContent = appState.totalDistance.toFixed(2) + ' km';
         statTotalElevationGain.textContent = Math.round(appState.totalElevationGain) + ' m';
+
+        // Afficher la flèche de fermeture du panneau seulement si au moins une trace est chargée
+        if (btnToggleSidebar) {
+            btnToggleSidebar.style.display = appState.tracks.length > 0 ? 'flex' : 'none';
+        }
+        // Si toutes les traces ont été supprimées et que la sidebar était fermée, la rouvrir
+        if (appState.tracks.length === 0 && sidebar && sidebar.classList.contains('collapsed')) {
+            toggleSidebar(false);
+        }
 
         // Mettre à jour la liste
         trackList.innerHTML = '';

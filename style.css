@@ -52,11 +52,18 @@ body {
     z-index: 1000;
     /* Above map leaflet controls */
     overflow-y: auto;
-    transition: margin-left 0.3s ease, transform 0.3s ease;
+    transition: margin-left 0.3s ease, width 0.3s ease, min-width 0.3s ease, padding 0.3s ease, transform 0.3s ease;
 }
 
 .sidebar.collapsed {
     margin-left: -350px;
+    min-width: 0 !important;
+    width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-right: none !important;
+    overflow: hidden !important;
+    pointer-events: none;
 }
 
 /* Boutons de masquage / ouverture du panneau latéral */
@@ -71,12 +78,21 @@ body {
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s, color 0.2s, transform 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .btn-toggle-sidebar {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     padding: 0;
+}
+
+.btn-toggle-sidebar svg,
+.btn-open-sidebar svg {
+    pointer-events: none;
 }
 
 .btn-toggle-sidebar:hover {
@@ -88,12 +104,14 @@ body {
     position: absolute;
     top: 16px;
     left: 16px;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
     z-index: 1001;
-    background: rgba(15, 23, 42, 0.85);
+    background: rgba(15, 23, 42, 0.9);
     border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
@@ -116,8 +134,10 @@ body {
     }
 
     .sidebar.collapsed {
-        margin-left: 0;
-        transform: translateX(-100%);
+        margin-left: 0 !important;
+        transform: translateX(-100%) !important;
+        width: 100% !important;
+        min-width: 100% !important;
     }
 }
 
