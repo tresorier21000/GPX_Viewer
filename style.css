@@ -409,7 +409,10 @@ path.leaflet-interactive {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     width: 90%;
-    max-width: 500px;
+    max-width: 550px;
+    max-height: 85vh; /* Ne dépasse jamais 85% de la hauteur de l'écran */
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     animation: modalFadeIn 0.3s ease;
@@ -434,6 +437,7 @@ path.leaflet-interactive {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* L'en-tête reste toujours visible */
 }
 
 .modal-header h2 {
@@ -460,6 +464,8 @@ path.leaflet-interactive {
     padding: 1.5rem;
     color: var(--text-secondary);
     line-height: 1.6;
+    overflow-y: auto; /* Ascenseur vertical automatique */
+    max-height: calc(85vh - 70px);
 }
 
 .modal-body ul {
